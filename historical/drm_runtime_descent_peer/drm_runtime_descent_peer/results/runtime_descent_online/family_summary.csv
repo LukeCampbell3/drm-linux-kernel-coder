@@ -1,6 +1,0 @@
-family,episodes,converged,convergence_episode,dimensions,candidate_episodes,commits,bookkeeping_ms,exploration_regret_ms,preopt_median_ms,last10_median_ms,observed_speedup,theta
-online_file,60,1,25,read_chunk|write_chunk|summary_impl,15,2,0.671517,421.12,208.154,51.3085,4.05692,r=1024;w=256;s=256;sum=1;ext=0;proc=0;timer=800
-online_http,60,1,110,write_chunk|socket_chunk|summary_impl,32,6,0.900713,26.2728,11.0389,11.5175,0.958445,r=256;w=128;s=512;sum=1;ext=0;proc=0;timer=800
-online_proc,55,1,210,read_chunk|write_chunk|summary_impl,19,5,0.316279,4.72711,1.84539,1.39787,1.32015,r=256;w=256;s=256;sum=0;ext=0;proc=0;timer=800
-online_hash,55,1,142,write_chunk|summary_impl|process_impl,12,2,1.0989,25.0771,31.0332,24.4996,1.26668,r=256;w=256;s=256;sum=1;ext=0;proc=1;timer=800
-online_timer,80,1,272,write_chunk|summary_impl|timer_quantum,26,5,0.502844,17.514,4.95715,3.71018,1.33609,r=256;w=128;s=256;sum=1;ext=0;proc=0;timer=50

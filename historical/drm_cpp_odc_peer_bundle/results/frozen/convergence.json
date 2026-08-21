@@ -1,9 +1,0 @@
-{
-  "novel_first5_semantic_mean": 4.4,
-  "novel_last5_semantic_mean": 1.2,
-  "novel_semantic_reduction": 0.7272727272727273,
-  "repeat_semantic_mean": 1,
-  "repeat_planner_ms_mean": 0.19675,
-  "post_recovery_semantic_mean": 1,
-  "post_recovery_planner_ms_mean": 0.03925
-}

@@ -1,3 +1,0 @@
-system,semantic,first_any,first_committed,last_committed,last_struct,words,provisional,admitted,expired,learn_ms,structure_bytes,raw_tokens,compressed_tokens,compression,uniform
-baseline,214,22,22,85,98,11,0,0,0,132.404,1797,273,70,0.74359,1
-hybrid,166,2,22,85,98,11,20,29,1,152.957,1797,273,70,0.74359,1

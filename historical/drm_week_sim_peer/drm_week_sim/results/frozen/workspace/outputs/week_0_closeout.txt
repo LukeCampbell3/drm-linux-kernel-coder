@@ -1,1 +1,0 @@
-ipc-ok:words=60 head=kind,id,label,value item,1,value,10 item,2,value,17 item,3,value,2
