@@ -1,0 +1,15 @@
+metric,gcc,clang,match
+episodes,99,99,True
+success_rate,1.0,1.0,True
+semantic_total,214,214,True
+semantic_mean,2.161616,2.161616,True
+derived_final,11,11,True
+structure_bytes_final,1797,1797,True
+uniform_vocabulary,True,True,True
+recoveries,4,4,True
+local_repairs,4,4,True
+raw_task_tokens,273,273,True
+compressed_task_tokens,70,70,True
+definition_tokens,37,37,True
+description_length_reduction,0.567766,0.567766,True
+root_counts,"{""COMMIT"": 230, ""DERIVE"": 390, ""OBSERVE"": 141}","{""COMMIT"": 230, ""DERIVE"": 390, ""OBSERVE"": 141}",True

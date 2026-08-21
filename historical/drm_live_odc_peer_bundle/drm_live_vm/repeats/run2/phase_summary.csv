@@ -1,0 +1,8 @@
+phase,n,success_rate,semantic_mean,wall_ms_mean,cpu_ms_mean,peak_rss_kb_max,derived_end,structure_bytes_end,recoveries,repairs
+warmup,12,1.0,2.0833,14.072,11.467,118248,0,761,0,0
+novel,25,1.0,2.8,14.01,10.078,119864,5,1660,0,0
+repeat,12,1.0,1.0,19.812,17.018,118556,5,1678,0,0
+drift,3,1.0,1.0,27.39,22.66,119796,6,1708,0,3
+evict,7,1.0,1.2857,20.27,17.329,118128,8,1830,0,0
+ancestral,3,1.0,2.0,25.678,23.173,118632,8,1813,3,0
+post_recovery,3,1.0,1.0,30.705,29.359,119416,8,1813,0,0

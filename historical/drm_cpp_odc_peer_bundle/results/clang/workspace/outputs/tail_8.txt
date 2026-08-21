@@ -1,0 +1,1 @@
+words=60 head=kind,id,label,value item,1,value,14 item,2,value,25 item,3,value,36 item,4,value,47 item,5,value,58 item,6,value,69 item,7,value,80 item,8,value,91 item,9,value,102

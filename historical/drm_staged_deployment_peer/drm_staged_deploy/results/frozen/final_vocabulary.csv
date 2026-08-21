@@ -1,0 +1,43 @@
+kind,name,length,transfer_hits,depth,root_uniform,definition
+permanent,d001,3,0,1,1,transform.summarize > fs.write > notify.send
+permanent,d002,3,0,1,1,transform.summarize > state.write > notify.send
+permanent,d003,3,0,1,1,transform.extract > transform.summarize > fs.write
+permanent,d004,3,0,1,1,transform.summarize > ipc.request > fs.write
+permanent,d005,3,0,1,1,transform.extract > ipc.request > transform.summarize
+permanent,d006,4,0,2,1,d003 > notify.send
+permanent,d007,5,0,1,1,fs.read > transform.summarize > ipc.request > state.write > notify.send
+permanent,d008,2,0,1,1,timer.observe > state.read
+permanent,d009,5,0,2,1,d008 > transform.extract > transform.summarize > state.write
+permanent,d010,5,0,2,1,http.request > transform.extract > d002
+permanent,d011,5,0,2,1,proc.observe > transform.extract > d004
+permanent,d012,5,0,2,1,http.request > d005 > fs.write
+permanent,d013,5,0,2,1,process.run > d004 > notify.send
+permanent,d014,5,0,2,1,fs.read > d005 > state.write
+permanent,d015,5,0,3,1,fs.read > d006
+permanent,d016,5,0,3,1,state.read > d006
+permanent,d017,4,0,2,1,proc.observe > d002
+permanent,d018,5,0,2,1,d008 > d001
+permanent,d019,5,0,2,1,transform.extract > state.read > d001
+permanent,d020,5,0,2,1,proc.observe > transform.extract > d002
+permanent,d021,5,0,2,1,transform.extract > d004 > notify.send
+permanent,d022,4,0,2,1,process.run > d003
+provisional,p003,2,87,0,1,transform.summarize > fs.write
+provisional,p009,2,117,0,1,transform.extract > transform.summarize
+provisional,p010,2,92,0,1,fs.write > notify.send
+provisional,p011,2,53,0,1,state.write > notify.send
+provisional,p016,2,63,0,1,transform.summarize > state.write
+provisional,p022,2,52,0,1,transform.summarize > ipc.request
+provisional,p033,3,23,0,1,state.read > transform.extract > transform.summarize
+provisional,p039,2,20,0,1,state.read > transform.extract
+provisional,p044,4,4,0,1,fs.read > transform.extract > transform.summarize > fs.write
+provisional,p047,2,2,0,1,ipc.request > fs.write
+provisional,p048,4,0,0,1,state.read > transform.extract > transform.summarize > fs.write
+provisional,p049,3,0,0,1,proc.observe > transform.summarize > state.write
+provisional,p050,4,0,0,1,transform.extract > transform.summarize > ipc.request > fs.write
+provisional,p051,3,0,0,1,fs.read > transform.extract > transform.summarize
+provisional,p052,2,1,0,1,http.request > transform.extract
+provisional,p053,3,0,0,1,process.run > transform.extract > transform.summarize
+provisional,p054,2,0,0,1,fs.read > transform.extract
+provisional,p055,3,1,0,1,transform.extract > transform.summarize > state.write
+provisional,p056,4,0,0,1,state.read > transform.summarize > fs.write > notify.send
+provisional,p057,4,0,0,1,transform.summarize > ipc.request > fs.write > notify.send

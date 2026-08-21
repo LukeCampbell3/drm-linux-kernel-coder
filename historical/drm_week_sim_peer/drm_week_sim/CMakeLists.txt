@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(drm_week_workflow LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_executable(drm_week_workflow src/week_workflow.cpp)
+target_compile_options(drm_week_workflow PRIVATE -O3 -Wall -Wextra -Wpedantic -Werror)
+add_executable(drm_mature_week src/mature_week.cpp)
+target_compile_options(drm_mature_week PRIVATE -O3 -Wall -Wextra -Wpedantic -Werror)

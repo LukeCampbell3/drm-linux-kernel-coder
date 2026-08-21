@@ -1,0 +1,1 @@
+words=12 head=runs=115 last=words=282 head=News 7 Story7-1 DRM local scheduling repeated task

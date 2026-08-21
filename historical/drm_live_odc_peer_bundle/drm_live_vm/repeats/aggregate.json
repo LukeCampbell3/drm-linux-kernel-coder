@@ -1,0 +1,11 @@
+{
+  "success_rate": 1.0,
+  "wall_ms": 1138.845,
+  "semantic_total": 128,
+  "derived_final": 8,
+  "structure_bytes": 1813,
+  "recoveries": 3,
+  "repairs": 3,
+  "wall_ms_stdev": 66.86221955259937,
+  "all_uniform": true
+}

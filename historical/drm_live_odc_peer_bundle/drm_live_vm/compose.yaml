@@ -1,0 +1,17 @@
+services:
+  drm-live:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: drm-live-odc:peer-v1
+    mem_limit: 2g
+    cpus: 2.0
+    pids_limit: 256
+    network_mode: none
+    volumes:
+      - ./peer-results:/results
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,6 @@
+family,default_wall_median_ms,optimized_wall_median_ms,speedup,saving_ms,exploration_regret_ms,break_even_episodes,output_equivalent,theta
+online_file,202.486,135.505,1.4943,66.9806,421.12,6.28719,1,r=1024;w=256;s=256;sum=1;ext=0;proc=0;timer=800
+online_http,11.1574,10.0405,1.11123,1.11686,26.2728,23.5238,1,r=256;w=128;s=512;sum=1;ext=0;proc=0;timer=800
+online_proc,1.53454,1.53454,1,0,4.72711,-1,1,r=256;w=256;s=256;sum=0;ext=0;proc=0;timer=800
+online_hash,27.6114,22.0157,1.25417,5.59569,25.0771,4.48151,1,r=256;w=256;s=256;sum=1;ext=0;proc=1;timer=800
+online_timer,4.60066,3.87222,1.18812,0.72844,17.514,24.0432,1,r=256;w=128;s=256;sum=1;ext=0;proc=0;timer=50

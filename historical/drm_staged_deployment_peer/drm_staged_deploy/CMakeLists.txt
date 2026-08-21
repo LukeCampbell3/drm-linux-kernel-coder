@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.20)
+project(drm_staged_deploy LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_executable(drm_staged_deploy src/staged_deploy.cpp)
+target_compile_options(drm_staged_deploy PRIVATE -O3 -Wall -Wextra -Wpedantic -Werror)

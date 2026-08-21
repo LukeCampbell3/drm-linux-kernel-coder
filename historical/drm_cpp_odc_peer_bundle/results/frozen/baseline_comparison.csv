@@ -1,0 +1,5 @@
+system,episodes,semantic_total,semantic_mean,recoveries,local_repairs,structural_changes,final_structure_bytes
+stateless,99,463,4.67677,0,0,0,0
+template_cache,99,344,3.47475,0,0,65,4315
+checkpoint_replay,99,316,3.19192,4,8,57,4315
+drm_odc_cpp,99,214,2.16162,4,4,76,1797

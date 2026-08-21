@@ -1,0 +1,11 @@
+# 16-bit DRM-ISA; only semantic opcodes OBS/DRV/CMT
+# task: daily_http
+0 DRV c4 @3 ; http.request
+1 CMT c4 @3 ; http.request
+2 OBS c4 @3 ; http.request
+3 DRV c7 @5 ; transform.extract
+4 DRV c8 @5 ; transform.summarize
+5 DRV c9 @2 ; fs.write
+6 CMT c9 @2 ; fs.write
+7 DRV c11 @5 ; notify.send
+8 CMT c11 @5 ; notify.send

@@ -1,0 +1,63 @@
+words=60 head=kind,id,label,value item,1,value,3 item,2,value,3 item,3,value,3 item,4,value,3 item,5,value,3 item,6,value,3 item,7,value,3 item,8,value,3 item,9,value,3
+words=2 head=1120f06773a19a14ae04174df8bf0016933006b1913ea05d9526a994a1b26176 results/clang/workspace/inputs/report_1.csv
+words=282 head=News 0 Story0-1 DRM local scheduling repeated task optimization Linux
+words=1 head=runs=0
+words=60 head=kind,id,label,value item,1,value,4 item,2,value,5 item,3,value,6 item,4,value,7 item,5,value,8 item,6,value,9 item,7,value,10 item,8,value,11 item,9,value,12
+words=2 head=91deacccf75198a449f5cc1cdc9c46d03dea4d089a324a7e2aae0c4e860d7eef results/clang/workspace/inputs/report_2.csv
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=5 head=runs=2 last=words=3 head=runs=1 last=words=1 head=runs=0
+words=60 head=kind,id,label,value item,1,value,5 item,2,value,7 item,3,value,9 item,4,value,11 item,5,value,13 item,6,value,15 item,7,value,17 item,8,value,19 item,9,value,21
+words=2 head=8879e7d1ddf64d0bf2003727c1e665a9c86f95b5b6130b5fcf9423daa8070ebb results/clang/workspace/inputs/report_3.csv
+words=282 head=News 2 Story2-1 DRM local scheduling repeated task optimization Linux
+words=9 head=runs=4 last=words=7 head=runs=3 last=words=5 head=runs=2 last=words=3 head=runs=1 last=words=1 head=runs=0
+words=60 head=kind,id,label,value item,1,value,3 item,2,value,3 item,3,value,3 item,4,value,3 item,5,value,3 item,6,value,3 item,7,value,3 item,8,value,3 item,9,value,3
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=12 head=runs=7 last=words=282 head=News 1 Story1-1 DRM local scheduling repeated task
+ipc-ok:words=60 head=kind,id,label,value item,1,value,7 item,2,value,11 item,3,value,15
+words=6 head=runs=8 last=ipc-ok:words=60 head=kind,id,label,value item,1,value,7 item,2,value,11 item,3,value,15
+words=60 head=kind,id,label,value item,1,value,11 item,2,value,19 item,3,value,27 item,4,value,35 item,5,value,43 item,6,value,51 item,7,value,59 item,8,value,67 item,9,value,75
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=12 head=runs=9 last=words=282 head=News 1 Story1-1 DRM local scheduling repeated task
+ipc-ok:words=60 head=kind,id,label,value item,1,value,15 item,2,value,27 item,3,value,3
+words=6 head=runs=10 last=ipc-ok:words=60 head=kind,id,label,value item,1,value,15 item,2,value,27 item,3,value,3
+words=60 head=kind,id,label,value item,1,value,3 item,2,value,3 item,3,value,3 item,4,value,3 item,5,value,3 item,6,value,3 item,7,value,3 item,8,value,3 item,9,value,3
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=12 head=runs=11 last=words=282 head=News 1 Story1-1 DRM local scheduling repeated task
+ipc-ok:words=60 head=kind,id,label,value item,1,value,7 item,2,value,11 item,3,value,15
+words=6 head=runs=12 last=ipc-ok:words=60 head=kind,id,label,value item,1,value,7 item,2,value,11 item,3,value,15
+words=60 head=kind,id,label,value item,1,value,11 item,2,value,19 item,3,value,27 item,4,value,35 item,5,value,43 item,6,value,51 item,7,value,59 item,8,value,67 item,9,value,75
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=12 head=runs=13 last=words=282 head=News 1 Story1-1 DRM local scheduling repeated task
+ipc-ok:words=60 head=kind,id,label,value item,1,value,15 item,2,value,27 item,3,value,3
+words=6 head=runs=14 last=ipc-ok:words=60 head=kind,id,label,value item,1,value,15 item,2,value,27 item,3,value,3
+words=60 head=kind,id,label,value item,1,value,3 item,2,value,3 item,3,value,3 item,4,value,3 item,5,value,3 item,6,value,3 item,7,value,3 item,8,value,3 item,9,value,3
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=12 head=runs=15 last=words=282 head=News 1 Story1-1 DRM local scheduling repeated task
+ipc-ok:words=60 head=kind,id,label,value item,1,value,7 item,2,value,11 item,3,value,15
+words=6 head=runs=16 last=ipc-ok:words=60 head=kind,id,label,value item,1,value,7 item,2,value,11 item,3,value,15
+words=60 head=kind,id,label,value item,1,value,3 item,2,value,3 item,3,value,3 item,4,value,3 item,5,value,3 item,6,value,3 item,7,value,3 item,8,value,3 item,9,value,3
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=12 head=runs=17 last=words=282 head=News 1 Story1-1 DRM local scheduling repeated task
+ipc-ok:words=60 head=kind,id,label,value item,1,value,7 item,2,value,11 item,3,value,15
+words=6 head=runs=18 last=ipc-ok:words=60 head=kind,id,label,value item,1,value,7 item,2,value,11 item,3,value,15
+words=60 head=kind,id,label,value item,1,value,11 item,2,value,19 item,3,value,27 item,4,value,35 item,5,value,43 item,6,value,51 item,7,value,59 item,8,value,67 item,9,value,75
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=12 head=runs=19 last=words=282 head=News 1 Story1-1 DRM local scheduling repeated task
+ipc-ok:words=60 head=kind,id,label,value item,1,value,15 item,2,value,27 item,3,value,3
+words=6 head=runs=20 last=ipc-ok:words=60 head=kind,id,label,value item,1,value,15 item,2,value,27 item,3,value,3
+words=60 head=kind,id,label,value item,1,value,16 item,2,value,29 item,3,value,42 item,4,value,55 item,5,value,68 item,6,value,81 item,7,value,94 item,8,value,107 item,9,value,120
+words=282 head=News 7 Story7-1 DRM local scheduling repeated task optimization Linux
+ipc-ok:words=2 head=6531a15e9941cde15c19bb8277d13eee4180713855d725bef44e82a457a633ef re
+words=60 head=kind,id,label,value item,1,value,6 item,2,value,9 item,3,value,12 item,4,value,15 item,5,value,18 item,6,value,21 item,7,value,24 item,8,value,27 item,9,value,30
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=12 head=runs=23 last=words=282 head=News 1 Story1-1 DRM local scheduling repeated task
+ipc-ok:words=60 head=kind,id,label,value item,1,value,10 item,2,value,17 item,3,value,2
+words=6 head=runs=24 last=ipc-ok:words=60 head=kind,id,label,value item,1,value,10 item,2,value,17 item,3,value,2
+words=60 head=kind,id,label,value item,1,value,14 item,2,value,25 item,3,value,36 item,4,value,47 item,5,value,58 item,6,value,69 item,7,value,80 item,8,value,91 item,9,value,102
+words=282 head=News 1 Story1-1 DRM local scheduling repeated task optimization Linux
+words=282 head=News 0 Story0-1 DRM local scheduling repeated task optimization Linux
+words=282 head=News 0 Story0-1 DRM local scheduling repeated task optimization Linux
+words=60 head=kind,id,label,value item,1,value,3 item,2,value,3 item,3,value,3 item,4,value,3 item,5,value,3 item,6,value,3 item,7,value,3 item,8,value,3 item,9,value,3
+words=60 head=kind,id,label,value item,1,value,3 item,2,value,3 item,3,value,3 item,4,value,3 item,5,value,3 item,6,value,3 item,7,value,3 item,8,value,3 item,9,value,3
+words=2 head=1120f06773a19a14ae04174df8bf0016933006b1913ea05d9526a994a1b26176 results/clang/workspace/inputs/report_1.csv
+words=2 head=1120f06773a19a14ae04174df8bf0016933006b1913ea05d9526a994a1b26176 results/clang/workspace/inputs/report_1.csv

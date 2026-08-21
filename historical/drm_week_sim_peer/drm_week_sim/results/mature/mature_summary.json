@@ -1,0 +1,17 @@
+{
+  "episodes": 60,
+  "success_rate": 1.000000,
+  "semantic_total": 68,
+  "semantic_mean": 1.133333,
+  "stateless_semantic": 308,
+  "template_semantic": 117,
+  "checkpoint_semantic": 117,
+  "permanent_words_start": 9,
+  "permanent_words_final": 13,
+  "provisional_words_final": 20,
+  "modeled_manual_minutes": 355.000000,
+  "modeled_attention_minutes": 15.233333,
+  "modeled_minutes_returned": 339.766667,
+  "attention_leverage": 23.304158,
+  "uniform_vocabulary": true
+}

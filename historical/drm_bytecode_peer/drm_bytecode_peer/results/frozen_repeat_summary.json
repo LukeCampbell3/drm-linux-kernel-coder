@@ -1,0 +1,67 @@
+{
+  "runs": 5,
+  "graph_ns": {
+    "mean": 122.4534904,
+    "median": 115.509376,
+    "sd": 14.643530916338614
+  },
+  "odc_ns": {
+    "mean": 26.2248864,
+    "median": 26.369052,
+    "sd": 0.5834577570422737
+  },
+  "block_ns": {
+    "mean": 23.254752,
+    "median": 23.212144,
+    "sd": 0.5109614383493146
+  },
+  "dense_ns": {
+    "mean": 16.4850728,
+    "median": 14.413932,
+    "sd": 4.489837830510497
+  },
+  "dense_block_ns": {
+    "mean": 13.1909736,
+    "median": 12.920784,
+    "sd": 0.7220987943078144
+  },
+  "odc_speedup": {
+    "mean": 4.6680906,
+    "median": 4.493331,
+    "sd": 0.5323310418553477
+  },
+  "block_speedup": {
+    "mean": 5.2657876,
+    "median": 5.037141,
+    "sd": 0.6218534899972821
+  },
+  "dense_speedup": {
+    "mean": 7.8118148,
+    "median": 8.013731,
+    "sd": 2.0243966948758336
+  },
+  "dense_block_speedup": {
+    "mean": 9.3033328,
+    "median": 8.885489,
+    "sd": 1.222562344152927
+  },
+  "structural_metrics": {
+    "semantic_total": 214,
+    "derived_words": 11,
+    "recoveries": 4,
+    "local_repairs": 4,
+    "roundtrip_tasks": 57,
+    "root_equivalent_tasks": 57,
+    "dense_roundtrip_tasks": 57,
+    "graph_bytes": 3807,
+    "bytecode_bytes": 892,
+    "dense_microop_bytes": 273,
+    "fused_total_bytes": 334,
+    "dense_fused_total_bytes": 182,
+    "unique_blocks": 15,
+    "live_success_all_modes": 12,
+    "live_workflows": 12,
+    "historical_blocks_immutable": true,
+    "uniform_vocabulary": true
+  }
+}

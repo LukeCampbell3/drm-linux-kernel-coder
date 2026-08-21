@@ -1,0 +1,14 @@
+services:
+  drm:
+    build: .
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m
+    volumes:
+      - ./peer-results:/results
+    cpus: 2
+    mem_limit: 512m
+    pids_limit: 128
+    security_opt:
+      - no-new-privileges:true
