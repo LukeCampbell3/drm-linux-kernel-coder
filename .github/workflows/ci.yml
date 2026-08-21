@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: build, test, lint (${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profile: [debug, release]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        run: |
+          rustup update stable
+          rustup default stable
+          rustup component add clippy rustfmt
+
+      - name: Cache cargo registry and build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: cargo-${{ matrix.profile }}-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ matrix.profile }}-${{ runner.os }}-
+
+      - name: Check formatting
+        if: matrix.profile == 'debug'
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (deny warnings)
+        if: matrix.profile == 'debug'
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Build
+        run: cargo build --workspace ${{ matrix.profile == 'release' && '--release' || '' }}
+
+      # cargo test already includes tests/bench_regression.rs, which runs
+      # `drmd bench` and asserts the frozen 99-episode workload's
+      # documented deterministic values -- no separate step needed here.
+      - name: Test
+        run: cargo test --workspace ${{ matrix.profile == 'release' && '--release' || '' }}
+
+  docker:
+    name: docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -f packaging/docker/Dockerfile -t drmd:ci .
+      - name: Smoke test
+        run: docker run --rm drmd:ci selftest | grep -q SELF_TEST_PASS

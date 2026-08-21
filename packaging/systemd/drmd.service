@@ -1,0 +1,48 @@
+[Unit]
+Description=DRM O/D/C developmental runtime daemon
+Documentation=https://github.com/LukeCampbell3/drm-linux-kernel-coder
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/drmd serve
+Restart=on-failure
+RestartSec=2s
+
+# The CLI's own defaults (/run/drmd/drmd.sock, /var/lib/drmd) line up
+# exactly with RuntimeDirectory/StateDirectory below, so no --socket/--work
+# arguments are needed here.
+DynamicUser=yes
+StateDirectory=drmd
+RuntimeDirectory=drmd
+RuntimeDirectoryPreserve=no
+
+# Sandboxing. drmd needs: write access to its own state/runtime dirs
+# (granted above), the ability to spawn `sha256sum` (a real child process,
+# for the process.run capability), and loopback TCP/AF_UNIX sockets (for
+# the http.request/ipc.request capabilities). Nothing else.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectProc=invisible
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

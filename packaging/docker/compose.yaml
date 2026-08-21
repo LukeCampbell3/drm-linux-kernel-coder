@@ -1,0 +1,18 @@
+services:
+  drmd:
+    build:
+      context: ../..
+      dockerfile: packaging/docker/Dockerfile
+    image: drmd:latest
+    restart: unless-stopped
+    volumes:
+      - drmd-state:/var/lib/drmd
+    read_only: true
+    tmpfs:
+      - /run/drmd
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  drmd-state:
