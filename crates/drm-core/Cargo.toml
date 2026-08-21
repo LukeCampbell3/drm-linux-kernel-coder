@@ -1,0 +1,12 @@
+[package]
+name = "drm-core"
+description = "DRM O/D/C developmental runtime: vocabulary learning and episodic planner engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
