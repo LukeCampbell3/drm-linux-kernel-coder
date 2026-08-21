@@ -1,6 +1,0 @@
-mode,ns_per_task_dispatch,speedup_vs_graph
-graph_strings,116.593,1
-odc_bytecode,26.033,4.47866
-fused_block,23.5195,4.9573
-dense_microop,14.6984,7.93235
-dense_fused_block,12.7704,9.12996

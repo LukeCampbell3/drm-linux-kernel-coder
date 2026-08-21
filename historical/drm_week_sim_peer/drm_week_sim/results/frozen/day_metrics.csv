@@ -1,8 +1,0 @@
-day,day_name,episodes,success_rate,semantic_total,semantic_mean,first_seen,first_seen_semantic_mean,first_seen_one_decision_rate,structural_events,recoveries,repairs,planner_mean_ms,planner_p95_ms,consolidation_mean_ms,executor_mean_ms,wall_mean_ms,peak_rss_kb,manual_minutes_modeled,human_attention_minutes_modeled,human_minutes_returned_modeled,attention_leverage,permanent_start,permanent_end,provisional_start,provisional_end,structure_bytes,stateless_semantic,template_semantic,checkpoint_semantic,uniform
-0,Mon Aug 17,12,1,51,4.25,12,4.25,0,23,0,0,0.0415983,0.080578,0.0816058,2.47827,2.60399,4564,74,7.95,66.05,9.30818,0,1,0,9,915,58,58,58,1
-1,Tue Aug 18,13,1,16,1.23077,2,2.5,0,3,0,0,0.286232,1.39767,0.0125011,1.25499,1.55391,4576,79,1.88333,77.1167,41.9469,1,1,9,10,947,64,20,20,1
-2,Wed Aug 19,14,1,28,2,8,2.75,0.125,18,0,0,0.0482594,0.159479,0.14975,1.77255,1.97076,4600,93,5.1,87.9,18.2353,1,2,10,16,1136,71,46,46,1
-3,Thu Aug 20,16,1,29,1.8125,10,2.3,0.2,29,0,2,0.0752604,0.159288,0.475526,2.77337,3.32437,4664,94,6.71667,87.2833,13.995,2,5,16,20,1418,81,65,55,1
-4,Fri Aug 21,15,1,25,1.66667,9,2,0.333333,20,1,0,0.127783,0.381736,0.875486,4.67475,5.67825,4680,112,5.73333,106.267,19.5349,5,9,20,19,1812,74,51,51,1
-5,Sat Aug 22,5,1,5,1,1,1,1,2,0,0,0.238241,0.624422,0.402201,3.1595,3.80015,4684,22,0.766667,21.2333,28.6957,9,9,19,20,1856,25,9,9,1
-6,Sun Aug 23,6,1,7,1.16667,2,1.5,0.5,4,0,0,0.236306,0.760919,0.891532,3.39398,4.52204,4688,34,1.31667,32.6833,25.8228,9,9,20,20,1939,31,15,15,1

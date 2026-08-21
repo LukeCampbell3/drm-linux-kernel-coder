@@ -1,9 +1,0 @@
-system,phase,mean_semantic
-stateless_planner,novel_composition,6.55
-task_checkpoint_replay,novel_composition,6.55
-flat_template_cache,novel_composition,6.55
-drm_hierarchical,novel_composition,3.634375
-stateless_planner,consolidated_repeat,6.513333333333334
-task_checkpoint_replay,consolidated_repeat,1
-flat_template_cache,consolidated_repeat,1
-drm_hierarchical,consolidated_repeat,1

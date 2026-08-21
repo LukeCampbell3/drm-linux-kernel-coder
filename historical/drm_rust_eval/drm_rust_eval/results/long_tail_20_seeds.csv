@@ -1,5 +1,0 @@
-final_active,final_derived,final_runtime_storage,local_repairs,mean_semantic,median_semantic,p95_semantic,recoveries,structural_changes,system,total_semantic
-0,0,0,0,6.54,6.375,8.45,0,0,stateless_planner,719.4
-80,0,524,0,5.036363636363636,6.0,8,0,80,task_checkpoint_replay,554
-80,0,524,0,5.036363636363636,6.0,8,0,80,flat_template_cache,554
-12,16,80.3,0,2.915909090909091,2.825,6.3,0,271.1,drm_hierarchical,320.75

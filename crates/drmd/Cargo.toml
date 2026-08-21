@@ -1,0 +1,16 @@
+[package]
+name = "drmd"
+description = "DRM O/D/C developmental runtime service and CLI"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "drmd"
+path = "src/main.rs"
+
+[dependencies]
+drm-core = { path = "../drm-core" }
+drm-exec = { path = "../drm-exec" }

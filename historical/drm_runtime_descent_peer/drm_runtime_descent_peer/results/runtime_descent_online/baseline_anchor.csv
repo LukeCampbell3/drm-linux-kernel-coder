@@ -1,6 +1,0 @@
-family,pass,default_median_ms,candidate_median_ms,speedup,saving_ms,action,theta
-online_file,0,202.858,134.562,1.50754,68.2955,keep,r=1024;w=256;s=256;sum=1;ext=0;proc=0;timer=800
-online_http,0,10.846,9.02713,1.20149,1.81892,keep,r=256;w=128;s=512;sum=1;ext=0;proc=0;timer=800
-online_proc,0,1.40013,1.55296,0.901592,-0.152824,rollback,r=256;w=256;s=256;sum=0;ext=0;proc=0;timer=800
-online_hash,0,27.2479,22.7491,1.19776,4.49876,keep,r=256;w=256;s=256;sum=1;ext=0;proc=1;timer=800
-online_timer,0,4.41237,4.02068,1.09742,0.391684,keep,r=256;w=128;s=256;sum=1;ext=0;proc=0;timer=50

@@ -1,9 +1,0 @@
-name,definition,capability_expansion,root_expansion,depth,uniform
-d001,transform.summarize > fs.write > notify.send,transform.summarize > fs.write > notify.send,DERIVE > DERIVE > COMMIT > DERIVE > COMMIT,1,1
-d002,transform.summarize > state.write > notify.send,transform.summarize > state.write > notify.send,DERIVE > DERIVE > COMMIT > DERIVE > COMMIT,1,1
-d003,transform.extract > d001,transform.extract > transform.summarize > fs.write > notify.send,DERIVE > DERIVE > DERIVE > COMMIT > DERIVE > COMMIT,2,1
-d004,process.run > transform.extract > transform.summarize > fs.write,process.run > transform.extract > transform.summarize > fs.write,DERIVE > COMMIT > OBSERVE > DERIVE > DERIVE > DERIVE > COMMIT,1,1
-d005,http.get > transform.extract > d002,http.get > transform.extract > transform.summarize > state.write > notify.send,DERIVE > OBSERVE > DERIVE > DERIVE > DERIVE > COMMIT > DERIVE > COMMIT,2,1
-d006,fs.read > d003,fs.read > transform.extract > transform.summarize > fs.write > notify.send,OBSERVE > DERIVE > DERIVE > DERIVE > COMMIT > DERIVE > COMMIT,3,1
-d007,state.read > d003,state.read > transform.extract > transform.summarize > fs.write > notify.send,OBSERVE > DERIVE > DERIVE > DERIVE > COMMIT > DERIVE > COMMIT,3,1
-d008,fs.read > d002,fs.read > transform.summarize > state.write > notify.send,OBSERVE > DERIVE > DERIVE > COMMIT > DERIVE > COMMIT,2,1

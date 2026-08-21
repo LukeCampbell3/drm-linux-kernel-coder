@@ -1,0 +1,8 @@
+/target/
+/dist/
+/vendor/
+Cargo.lock.bak
+*.qcow2
+*.raw
+*.credentials.txt
+/packaging/vm-image/build/

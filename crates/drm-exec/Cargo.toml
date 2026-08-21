@@ -1,0 +1,11 @@
+[package]
+name = "drm-exec"
+description = "Real-Linux capability executor for the DRM O/D/C runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+drm-core = { path = "../drm-core" }

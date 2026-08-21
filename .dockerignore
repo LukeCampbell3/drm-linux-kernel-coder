@@ -1,0 +1,7 @@
+target/
+historical/
+.git/
+*.qcow2
+*.raw
+*.iso
+packaging/vm-image/build/

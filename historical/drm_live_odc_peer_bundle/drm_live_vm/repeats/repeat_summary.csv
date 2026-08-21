@@ -1,6 +1,0 @@
-run,success_rate,wall_ms,semantic_total,derived_final,structure_bytes,recoveries,repairs,uniform
-run1,1.0,1216.489,128,8,1813,3,3,True
-run2,1.0,1150.051,128,8,1813,3,3,True
-run3,1.0,1180.814,128,8,1813,3,3,True
-run4,1.0,1099.986,128,8,1813,3,3,True
-run5,1.0,1046.885,128,8,1813,3,3,True
