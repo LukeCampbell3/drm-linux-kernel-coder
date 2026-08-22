@@ -104,6 +104,39 @@ test cannot observe it directly; verifying the graphical session
 reaches a usable state is the correct, honest proxy here, not a
 weakened check.
 
+## Real boot verification
+
+Built and boot-tested end to end in this session (QEMU, software
+emulation, no `/dev/kvm` available in this environment):
+
+```
+$ packaging/vm-image/boot-smoke-test.sh dist/drmd-desktop.qcow2 450
+booting under QEMU (pid 19807), watching .../serial.log for up to 450s...
+PASS: observed lightdm reaching graphical.target within 450s
+```
+
+The kernel boots, `debian-archive-keyring`-signed `debootstrap` fetched
+and installed `xfce4`/`lightdm` cleanly, `graphical.target` is reached,
+and lightdm's autologin path is exercised (its own console output is
+what the smoke test observes). Real disk-image inspection (mounting the
+built qcow2 directly, not just trusting the build script's exit code)
+independently confirmed: `drmd` present at `/usr/local/bin/drmd`, no
+system-level `drmd.service` installed, the two user units present under
+`/home/drm/.config/systemd/user/` with correct `drm:drm` ownership and
+`default.target.wants` symlinks, the `loginctl enable-linger`
+marker file present, and `display-manager.service`/`default.target`
+correctly pointed at `lightdm.service`/`graphical.target`.
+
+Not independently verified in this session: that `drmd.service`
+actually starts and stays up *inside* the autologin session once
+XFCE/lightdm are fully interactive (the smoke test's serial-console
+check stops at "lightdm reached graphical.target," which is as far as
+a headless, non-interactive console can observe -- a user-level unit's
+own status does not reach the serial console the way a system unit's
+does, per this report's earlier note). Confirming that specific step
+needs either a VNC/display connection to the booted VM or SSHing in and
+running `systemctl --user status drmd`.
+
 ## Known limitations
 
 - Same synthetic-simulator framing as the server report: this is a
@@ -115,8 +148,5 @@ weakened check.
 - Per-episode CPU/RSS/byte-I/O and `syscall_count` limitations are the
   same as documented in the server report and `drm-observe`'s module
   docs.
-- The desktop image was not boot-tested end-to-end with a real GUI
-  session inside *this* execution environment beyond
-  `boot-smoke-test.sh`'s automated serial-console check -- report
-  whatever `boot-smoke-test.sh` actually observed when you run it,
-  rather than assuming success from the script existing.
+- See "Real boot verification" above for exactly what was and was not
+  independently confirmed about the user-level `drmd` service itself.
