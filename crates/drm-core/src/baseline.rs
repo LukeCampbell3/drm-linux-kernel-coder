@@ -54,15 +54,14 @@ impl Baseline {
                     Some(old) if old == &ep.ops => {
                         m.semantic = 1;
                     }
-                    Some(old) => {
-                        if self.kind.unwrap() == BaselineKind::CheckpointReplay {
-                            let delta = DrmPlanner::diff_middle(old, &ep.ops);
-                            m.semantic = 1usize.max(delta.len());
-                            m.local_repair = 1;
-                        } else {
-                            m.semantic = ep.ops.len();
-                            m.structural_change = 1;
-                        }
+                    Some(old) if self.kind.unwrap() == BaselineKind::CheckpointReplay => {
+                        let delta = DrmPlanner::diff_middle(old, &ep.ops);
+                        m.semantic = 1usize.max(delta.len());
+                        m.local_repair = 1;
+                    }
+                    Some(_) => {
+                        m.semantic = ep.ops.len();
+                        m.structural_change = 1;
                     }
                 }
                 if ep.ancestral && self.kind.unwrap() == BaselineKind::CheckpointReplay {

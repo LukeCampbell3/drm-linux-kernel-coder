@@ -193,7 +193,7 @@ impl HybridPlanner {
     }
 
     fn update_transfer(&mut self, ep: &Episode) {
-        for (_, p) in self.provisional.iter_mut() {
+        for p in self.provisional.values_mut() {
             if Self::contains_seq(&ep.ops, &p.raw) && !p.birth_tasks.contains(ep.task()) {
                 p.transfer_hits += 1;
                 p.last_transfer_step = self.struct_step;
