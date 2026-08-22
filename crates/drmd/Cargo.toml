@@ -14,3 +14,5 @@ path = "src/main.rs"
 [dependencies]
 drm-core = { path = "../drm-core" }
 drm-exec = { path = "../drm-exec" }
+drm-observe = { path = "../drm-observe" }
+drm-opt = { path = "../drm-opt" }

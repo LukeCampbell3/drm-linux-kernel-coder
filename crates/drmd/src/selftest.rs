@@ -2,7 +2,7 @@
 //! healthcheck or a pre-deploy smoke test -- doesn't spin up sockets or
 //! touch the filesystem, just exercises the planner in memory.
 
-use drm_core::{is_root, DrmPlanner, Episode, Vocabulary, CAPABILITIES, ROOT};
+use drm_core::{is_root, DrmPlanner, Episode, ExecutionContext, Vocabulary, CAPABILITIES, ROOT};
 
 pub fn run() -> bool {
     if ROOT != ["OBSERVE", "DERIVE", "COMMIT"] {
@@ -25,7 +25,7 @@ pub fn run() -> bool {
     let mut p = DrmPlanner::new(1, 3);
     let ep = Episode {
         idx: 1,
-        task: "old".into(),
+        ctx: ExecutionContext::simple("selftest", "old"),
         phase: "x".into(),
         ops: vec!["fs.read".into(), "transform.summarize".into(), "fs.write".into()],
         source: "x".into(),
@@ -35,7 +35,7 @@ pub fn run() -> bool {
     };
     p.plan(&ep);
     let other = Episode {
-        task: "other".into(),
+        ctx: ExecutionContext::simple("selftest", "other"),
         ..ep.clone()
     };
     p.plan(&other);

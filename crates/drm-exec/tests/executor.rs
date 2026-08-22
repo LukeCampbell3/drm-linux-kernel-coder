@@ -16,7 +16,7 @@ fn full_capability_pipeline_produces_real_committed_output() {
 
     let ep = Episode {
         idx: 1,
-        task: "t".into(),
+        ctx: drm_core::ExecutionContext::simple("test-app", "t"),
         phase: "test".into(),
         ops: vec![
             "fs.read".into(),
@@ -48,7 +48,7 @@ fn process_run_spawns_real_child_and_hashes_the_file() {
     let mut ex = LiveExecutor::start(work.clone()).unwrap();
     let ep = Episode {
         idx: 1,
-        task: "hash".into(),
+        ctx: drm_core::ExecutionContext::simple("test-app", "hash"),
         phase: "test".into(),
         ops: vec!["process.run".into(), "transform.summarize".into(), "fs.write".into()],
         source: "inputs/report_0.csv".into(),
@@ -68,7 +68,7 @@ fn http_and_ipc_capabilities_round_trip_over_real_sockets() {
     let mut ex = LiveExecutor::start(work.clone()).unwrap();
     let ep = Episode {
         idx: 1,
-        task: "net".into(),
+        ctx: drm_core::ExecutionContext::simple("test-app", "net"),
         phase: "test".into(),
         ops: vec![
             "http.request".into(),
@@ -97,7 +97,7 @@ fn fs_write_without_prior_data_is_rejected_by_verification() {
     // must fail output verification rather than silently commit an empty file.
     let ep = Episode {
         idx: 1,
-        task: "empty".into(),
+        ctx: drm_core::ExecutionContext::simple("test-app", "empty"),
         phase: "test".into(),
         ops: vec!["fs.write".into()],
         source: "inputs/report_0.csv".into(),

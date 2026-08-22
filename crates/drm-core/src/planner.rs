@@ -160,8 +160,9 @@ impl DrmPlanner {
 
     /// Advance the planner by one episode, returning what it cost.
     pub fn plan(&mut self, ep: &Episode) -> PlanMetrics {
+        let task = ep.task();
         let mut m = PlanMetrics::default();
-        if let Some(old) = self.active.get(&ep.task).cloned() {
+        if let Some(old) = self.active.get(task).cloned() {
             if old == ep.ops {
                 m.semantic = 1;
             } else {
@@ -170,7 +171,7 @@ impl DrmPlanner {
                 m.local_repair = 1;
                 m.structural_change += 1;
             }
-        } else if let Some(old) = self.history.get(&ep.task).cloned() {
+        } else if let Some(old) = self.history.get(task).cloned() {
             if ep.ancestral {
                 m.recovery = 1;
                 m.semantic = 1usize.max(self.vocab.compress(&ep.ops).len());
@@ -188,15 +189,15 @@ impl DrmPlanner {
             m.structural_change += 1;
         }
 
-        let new_structural_evidence = self.history.get(&ep.task).map(|old| old != &ep.ops).unwrap_or(true);
+        let new_structural_evidence = self.history.get(task).map(|old| old != &ep.ops).unwrap_or(true);
         self.version += 1;
-        self.history.insert(ep.task.clone(), ep.ops.clone());
-        self.history_version.insert(ep.task.clone(), self.version);
+        self.history.insert(task.to_string(), ep.ops.clone());
+        self.history_version.insert(task.to_string(), self.version);
         if new_structural_evidence {
-            let touched = self.note_subseqs(&ep.task, &ep.ops);
+            let touched = self.note_subseqs(task, &ep.ops);
             m.structural_change += self.maybe_grow(&touched);
         }
-        self.touch(&ep.task, &ep.ops);
+        self.touch(task, &ep.ops);
         self.finish_metrics(m)
     }
 }
@@ -212,7 +213,7 @@ mod tests {
     fn ep(idx: usize, task: &str, ops: Seq, ancestral: bool) -> Episode {
         Episode {
             idx,
-            task: task.into(),
+            ctx: crate::ExecutionContext::simple("test-app", task),
             phase: "x".into(),
             ops,
             source: "x".into(),
