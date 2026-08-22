@@ -1,0 +1,38 @@
+# User-level unit (spec S6's desktop deployment: `systemctl --user`),
+# not a system unit. Install at ~/.config/systemd/user/drmd.service (or
+# /etc/skel/.config/systemd/user/drmd.service so it lands in every new
+# home directory), then:
+#   systemctl --user enable --now drmd.service
+#   loginctl enable-linger <user>   # so it keeps running without an
+#                                    # active login session, matching
+#                                    # the desktop's User -> Apps -> DRM
+#                                    # -> OS -> HW model where drmd
+#                                    # should be up whenever the machine
+#                                    # is, not just while logged in.
+#
+# Paths use systemd's user-unit specifiers (%t = $XDG_RUNTIME_DIR, %h =
+# the user's home) instead of the system daemon's /run/drmd,
+# /var/lib/drmd defaults -- a desktop user's drmd instance has no
+# business writing into system directories it doesn't own.
+[Unit]
+Description=DRM Adaptive Execution Layer (desktop, per-user instance)
+Documentation=https://github.com/LukeCampbell3/drm-linux-kernel-coder
+After=graphical-session-pre.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/drmd serve --socket %t/drmd.sock --work %h/.local/share/drmd --state %h/.local/share/drmd/state
+Restart=on-failure
+RestartSec=2s
+
+# User-manager-scoped sandboxing (the directives system units use --
+# DynamicUser, CapabilityBoundingSet, etc. -- are meaningless or
+# rejected for user units, which already run as the logged-in user with
+# no elevated capabilities to begin with).
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectClock=yes
+RestrictRealtime=yes
+
+[Install]
+WantedBy=default.target

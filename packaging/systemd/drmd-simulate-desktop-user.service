@@ -1,0 +1,24 @@
+# User-level oneshot: runs `drmd simulate desktop` once per login
+# session as a live, reproducible demo of the comparative benchmark
+# suite (spec S12/S16), writing results under the user's own home
+# directory. Install alongside drmd-user.service at
+# ~/.config/systemd/user/ and enable with:
+#   systemctl --user enable --now drmd-simulate-desktop.service
+[Unit]
+Description=DRM desktop benchmark suite (drmd simulate desktop) -- demo
+Documentation=https://github.com/LukeCampbell3/drm-linux-kernel-coder
+After=graphical-session-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/drmd simulate desktop --out %h/.local/share/drmd-demo/simulate
+WorkingDirectory=%h
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectClock=yes
+RestrictRealtime=yes
+
+[Install]
+WantedBy=default.target
