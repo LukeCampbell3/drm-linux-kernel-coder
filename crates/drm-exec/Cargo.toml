@@ -9,3 +9,4 @@ repository.workspace = true
 
 [dependencies]
 drm-core = { path = "../drm-core" }
+drm-opt = { path = "../drm-opt" }

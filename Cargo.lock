@@ -15,6 +15,7 @@ name = "drm-exec"
 version = "1.0.0"
 dependencies = [
  "drm-core",
+ "drm-opt",
 ]
 
 [[package]]

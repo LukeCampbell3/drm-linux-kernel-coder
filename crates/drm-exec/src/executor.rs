@@ -17,6 +17,7 @@ use std::time::{Duration, Instant};
 use drm_core::{root_expansion, Episode};
 
 use crate::servers::{TcpFixtureServer, UnixFixtureServer};
+use crate::specialize::SpecializationSet;
 
 #[derive(Debug)]
 pub enum ExecError {
@@ -56,6 +57,23 @@ pub struct LiveExecutor {
     pub ipc_requests: usize,
     pub timer_events: usize,
     pub root_counts: HashMap<String, usize>,
+    /// Opt-in bridge to `drm-opt`'s specialization lifecycle (see
+    /// `crate::specialize` module docs). `None` (the default from
+    /// [`LiveExecutor::start`]) reproduces this executor's exact
+    /// pre-specialization behavior -- every existing baseline/regression
+    /// guarantee holds unchanged with no `SpecializationSet` attached.
+    pub specializations: Option<SpecializationSet>,
+    /// How many `fs.read`s this executor has served from a verified
+    /// read-avoidance specialization instead of touching disk.
+    pub reads_avoided: usize,
+    /// How many transform chains this executor has served from a
+    /// verified fusion specialization's memo table instead of
+    /// recomputing.
+    pub transforms_memoized: usize,
+    /// The specialization id (if any) that served each capability in the
+    /// most recent [`LiveExecutor::execute`] call, in the order they were
+    /// used. Cleared at the start of every call.
+    pub optimizations_used: Vec<String>,
 }
 
 impl LiveExecutor {
@@ -85,7 +103,20 @@ impl LiveExecutor {
             ipc_requests: 0,
             timer_events: 0,
             root_counts: HashMap::new(),
+            specializations: None,
+            reads_avoided: 0,
+            transforms_memoized: 0,
+            optimizations_used: Vec::new(),
         })
+    }
+
+    /// Attach a [`SpecializationSet`], enabling real read-avoidance and
+    /// transform-fusion specialization for subsequent [`Self::execute`]
+    /// calls. Strictly opt-in: without calling this, `execute` behaves
+    /// exactly as it always has.
+    pub fn with_specialization(mut self, specializations: SpecializationSet) -> Self {
+        self.specializations = Some(specializations);
+        self
     }
 
     fn note_roots(&mut self, cap: &str) {
@@ -102,12 +133,65 @@ impl LiveExecutor {
     /// atomic, matching the durable-step semantics of the underlying
     /// primitive).
     pub fn execute(&mut self, ep: &Episode) -> Result<(), ExecError> {
+        self.optimizations_used.clear();
         let mut data = String::new();
-        for cap in &ep.ops {
+        let mut idx = 0usize;
+        while idx < ep.ops.len() {
+            let cap = &ep.ops[idx];
             self.note_roots(cap);
+
+            // Pure transform.* capabilities run in a maximal consecutive
+            // group so a `SpecializationSet`, when attached, can treat
+            // the whole chain as one fusable/memoizable unit rather than
+            // one stage at a time. With no `SpecializationSet` attached
+            // this produces byte-identical output to running each stage
+            // individually (both paths call the same
+            // `drm_opt::equivalence::apply_transform_stage` logic), so
+            // baseline execution is unaffected.
+            if cap.starts_with("transform.") {
+                let start = idx;
+                let mut end = idx;
+                while end < ep.ops.len() && ep.ops[end].starts_with("transform.") {
+                    end += 1;
+                }
+                for extra in &ep.ops[start + 1..end] {
+                    self.note_roots(extra);
+                }
+                let stages = &ep.ops[start..end];
+                let (out, used) = match self.specializations.as_mut() {
+                    Some(spec) => spec
+                        .run_transform_chain(&ep.ctx.application_id, stages, &data)
+                        .ok_or_else(|| ExecError::UnknownCapability(stages.join(",")))?,
+                    None => (
+                        drm_opt::equivalence::run_stages_unfused(stages, &data)
+                            .ok_or_else(|| ExecError::UnknownCapability(stages.join(",")))?,
+                        None,
+                    ),
+                };
+                if let Some(id) = used {
+                    self.transforms_memoized += 1;
+                    self.optimizations_used.push(id);
+                }
+                data = out;
+                idx = end;
+                continue;
+            }
+
             match cap.as_str() {
                 "fs.read" => {
-                    data = fs::read_to_string(self.work.join(&ep.source))?;
+                    let path = ep.source.clone();
+                    let work = self.work.clone();
+                    data = match self.specializations.as_mut() {
+                        Some(spec) => {
+                            let (content, used) = spec.read(&ep.ctx.application_id, &path, || fs::read_to_string(work.join(&path)))?;
+                            if let Some(id) = used {
+                                self.reads_avoided += 1;
+                                self.optimizations_used.push(id);
+                            }
+                            content
+                        }
+                        None => fs::read_to_string(work.join(&path))?,
+                    };
                 }
                 "state.read" => {
                     let p = self.work.join("state.txt");
@@ -146,27 +230,6 @@ impl LiveExecutor {
                     data = String::from_utf8_lossy(&out.stdout).trim().to_string();
                     self.process_spawns += 1;
                 }
-                "transform.extract" => {
-                    let mut clean = String::with_capacity(data.len());
-                    let mut in_tag = false;
-                    for c in data.chars() {
-                        match c {
-                            '<' => in_tag = true,
-                            '>' => {
-                                in_tag = false;
-                                clean.push(' ');
-                            }
-                            _ if !in_tag => clean.push(c),
-                            _ => {}
-                        }
-                    }
-                    data = clean.split_whitespace().collect::<Vec<_>>().join(" ");
-                }
-                "transform.summarize" => {
-                    let words: Vec<&str> = data.split_whitespace().collect();
-                    let head = words.iter().take(10).copied().collect::<Vec<_>>().join(" ");
-                    data = format!("words={} head={}", words.len(), head);
-                }
                 "fs.write" => {
                     let out = self.work.join(&ep.output);
                     if let Some(parent) = out.parent() {
@@ -176,6 +239,9 @@ impl LiveExecutor {
                     fs::write(&tmp, &data)?;
                     fs::rename(&tmp, &out)?;
                     self.commits += 1;
+                    if let Some(spec) = self.specializations.as_mut() {
+                        spec.mark_written(&ep.output);
+                    }
                 }
                 "state.write" => {
                     self.state_runs += 1;
@@ -185,6 +251,9 @@ impl LiveExecutor {
                     fs::write(&tmp, format!("runs={} last={}", self.state_runs, snippet))?;
                     fs::rename(&tmp, &out)?;
                     self.commits += 1;
+                    if let Some(spec) = self.specializations.as_mut() {
+                        spec.mark_written("state.txt");
+                    }
                 }
                 "notify.send" => {
                     let p = self.work.join("notifications.log");
@@ -195,6 +264,7 @@ impl LiveExecutor {
                 }
                 other => return Err(ExecError::UnknownCapability(other.to_string())),
             }
+            idx += 1;
         }
         if ep.ops.iter().any(|c| c == "fs.write") {
             let p = self.work.join(&ep.output);
