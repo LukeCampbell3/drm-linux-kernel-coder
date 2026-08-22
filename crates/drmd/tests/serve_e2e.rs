@@ -44,6 +44,7 @@ fn serve_accepts_submit_and_status_over_real_socket() {
     std::fs::create_dir_all(&dir).unwrap();
     let socket = dir.join("drmd.sock");
     let work = dir.join("work");
+    let state = dir.join("state");
 
     let mut server = Command::new(drmd())
         .arg("serve")
@@ -51,6 +52,8 @@ fn serve_accepts_submit_and_status_over_real_socket() {
         .arg(&socket)
         .arg("--work")
         .arg(&work)
+        .arg("--state")
+        .arg(&state)
         .arg("--consolidate-ms")
         .arg("50")
         .stdout(Stdio::piped())
