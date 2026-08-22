@@ -4,6 +4,7 @@ members = [
     "crates/drm-core",
     "crates/drm-exec",
     "crates/drm-observe",
+    "crates/drm-opt",
     "crates/drmd",
 ]
 

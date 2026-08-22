@@ -1,0 +1,11 @@
+[package]
+name = "drm-opt"
+description = "Executable specialization: candidate construction, equivalence validation, and lifecycle-gated admission/rollback for the DRM Adaptive Execution Layer"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+drm-core = { path = "../drm-core" }
