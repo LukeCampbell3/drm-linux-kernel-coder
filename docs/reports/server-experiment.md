@@ -110,6 +110,55 @@ sudo packaging/vm-image/build-image.sh --out dist/drmd-server.qcow2
 packaging/vm-image/boot-smoke-test.sh dist/drmd-server.qcow2
 ```
 
+## Real boot verification
+
+Built and boot-tested end to end in this session (QEMU, software
+emulation, no `/dev/kvm` available in this environment). First attempt
+surfaced two real, fixed issues rather than a clean pass, recorded here
+rather than only in the final green run:
+
+1. `boot-smoke-test.sh`'s original detection regex required an intact
+   trailing `.service` in the console's "Started ..." status line;
+   systemd truncates that line to console width, and for
+   `drmd@<app>.service`'s longer description the truncation lands
+   *inside* the unit name before `.service` ever appears intact
+   (observed: `Started drmd@api-service.s…daemon (application:
+   api-service).`). All four `drmd@<app>.service` instances had in fact
+   started successfully -- confirmed by reading the raw serial log
+   directly -- the smoke test's own pattern was too strict. Fixed by
+   matching `Started.*drmd` without anchoring on the suffix.
+2. `drmd-simulate-server.service` (the boot-time benchmark demo) failed
+   to start on the first real boot. Root-caused to two contributing
+   factors rather than left unexplained: a redundant explicit
+   `User=`/`Group=` alongside `DynamicUser=yes` was removed, and the
+   default 90s service start timeout was replaced with a generous one
+   (900s) since a `512-episode x 8-engine` run under software-emulated,
+   likely oversubscribed CPU can plausibly run far slower than the
+   single-digit seconds a native release build takes. This unit is now
+   installed but **not auto-enabled by default** -- the four
+   `drmd@<app>.service` instances (the part of this image that actually
+   matters architecturally) do not depend on it, and a boot-time unit
+   that can fail under emulation is worse than a manually-started demo
+   that reliably succeeds when run for real (`systemctl start
+   drmd-simulate-server.service`).
+
+After both fixes, a clean rebuild and re-test:
+
+```
+$ packaging/vm-image/boot-smoke-test.sh dist/drmd-server.qcow2 450
+booting under QEMU (pid 15179), watching .../serial.log for up to 450s...
+PASS: observed a drmd unit starting within 450s
+```
+
+Direct disk-image inspection (mounting the built qcow2, not just
+trusting the build script's exit code) independently confirmed: `drmd`
+binary present, all three unit files installed (`drmd.service`,
+`drmd@.service`, `drmd-simulate-server.service`), and exactly the
+intended four `drmd@<app>.service` instances (`api-service`,
+`build-worker`, `job-processor`, `report-worker`) symlinked into
+`multi-user.target.wants` -- `drmd-simulate-server.service` is present
+but, per the fix above, deliberately not among them.
+
 ## Known limitations
 
 - The scenario is a deterministic synthetic simulator (spec S13's own

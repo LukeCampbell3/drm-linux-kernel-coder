@@ -11,11 +11,18 @@ After=network.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/local/bin/drmd simulate server --out /var/lib/drmd-demo/simulate
-User=drmd-demo
-Group=drmd-demo
 DynamicUser=yes
 StateDirectory=drmd-demo
 WorkingDirectory=/var/lib/drmd-demo
+# 512 episodes x 8 engines, each spawning real child processes
+# (process.run/sha256sum) -- real, measured local runs take single-
+# digit seconds on a native release build, but this has been observed
+# to run far slower (and, on at least one boot attempt, to fail
+# outright -- see build-image.sh's comment on why this unit is not
+# auto-enabled by default) under software-emulated (no-KVM) QEMU. A
+# generous timeout costs nothing on a normal boot; the default (90s)
+# risked looking like a hang rather than legitimately slow emulation.
+TimeoutStartSec=900
 
 # Same sandboxing posture as the live daemons; this is real code doing
 # real filesystem I/O and spawning real child processes

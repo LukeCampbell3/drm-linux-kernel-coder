@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
 # Boot a built drmd VM image under QEMU (software emulation, no KVM
-# required) and verify it reaches a usable state: the kernel boots,
-# systemd reaches multi-user.target, and at least one drmd unit starts
-# -- either the single shared `drmd.service` (the desktop image's
-# default, and always installed-but-disabled on the server image too)
-# or a per-application `drmd@<app>.service` instance (the server
-# image's default). This checks systemd's own "Started drmd...service"
-# status line on the console rather than drmd's own "listening on"
-# stderr line -- under systemd, a service's stdout/stderr goes to the
-# journal by default, not the console, so the latter never appears in
-# the serial log even on a fully successful boot.
+# required) and verify it reaches a usable state.
+#
+# Two image shapes are supported by the same script:
+# - server/generic images reach multi-user.target and run a system-
+#   level drmd unit (`drmd.service` or a `drmd@<app>.service`
+#   instance) -- checked via systemd's own "Started drmd...service"
+#   status line on the console.
+# - the desktop image reaches graphical.target instead (lightdm ->
+#   autologin -> XFCE), and runs drmd as a *user*-level systemd unit,
+#   which does not write status lines to the console the way a system
+#   unit does -- so for that image this script checks lightdm/
+#   graphical.target instead, which is what's actually observable here
+#   and is the correct proxy for "the desktop boots to a usable
+#   session."
+#
+# Which check applies is auto-detected from whether "lightdm" ever
+# appears in the boot log, not passed as a flag -- so this one script
+# verifies both images' image-specific definition of "booted
+# successfully."
 #
 # Usage: packaging/vm-image/boot-smoke-test.sh path/to/drmd.qcow2 [timeout_seconds]
 
@@ -40,11 +49,27 @@ QEMU_PID=$!
 echo "booting under QEMU (pid $QEMU_PID), watching $SERIAL_LOG for up to ${TIMEOUT}s..." >&2
 
 deadline=$((SECONDS + TIMEOUT))
-found=0
+drmd_found=0
+lightdm_seen=0
+graphical_found=0
 while [ $SECONDS -lt $deadline ]; do
-  if [ -f "$SERIAL_LOG" ] && grep -aqE "Started.*drmd(@[^[:space:]]+)?\.service" "$SERIAL_LOG" 2>/dev/null; then
-    found=1
-    break
+  if [ -f "$SERIAL_LOG" ]; then
+    # Not anchored on a trailing ".service": a systemd console status
+    # line is truncated to console width, and for a long unit
+    # description (e.g. drmd@<app>.service's "daemon (application:
+    # <app>)") the truncation can land *inside* the unit name itself
+    # (observed in practice: "Started drmd@api-service.s…daemon
+    # (application: api-service)."), before ".service" ever appears
+    # intact. "Started" and "drmd" co-occurring on one real console
+    # line is specific enough without requiring the suffix to survive.
+    grep -aqE "Started.*drmd" "$SERIAL_LOG" 2>/dev/null && drmd_found=1
+    grep -aq "lightdm" "$SERIAL_LOG" 2>/dev/null && lightdm_seen=1
+    grep -aqE "(Reached target Graphical Interface|Started.*[Ll]ightdm)" "$SERIAL_LOG" 2>/dev/null && graphical_found=1
+  fi
+  if [ "$lightdm_seen" = "1" ]; then
+    [ "$graphical_found" = "1" ] && break
+  else
+    [ "$drmd_found" = "1" ] && break
   fi
   if ! kill -0 "$QEMU_PID" 2>/dev/null; then
     echo "qemu exited early" >&2
@@ -56,11 +81,19 @@ done
 kill "$QEMU_PID" 2>/dev/null || true
 wait "$QEMU_PID" 2>/dev/null || true
 
-if [ "$found" = "1" ]; then
-  echo "PASS: systemd started a drmd unit within ${TIMEOUT}s" >&2
+if [ "$lightdm_seen" = "1" ]; then
+  pass="$graphical_found"
+  what="lightdm reaching graphical.target"
+else
+  pass="$drmd_found"
+  what="a drmd unit starting"
+fi
+
+if [ "$pass" = "1" ]; then
+  echo "PASS: observed $what within ${TIMEOUT}s" >&2
   exit 0
 else
-  echo "FAIL: did not observe a drmd unit starting within ${TIMEOUT}s -- last serial output:" >&2
+  echo "FAIL: did not observe $what within ${TIMEOUT}s -- last serial output:" >&2
   tail -n 60 "$SERIAL_LOG" 2>/dev/null >&2 || true
   exit 1
 fi
