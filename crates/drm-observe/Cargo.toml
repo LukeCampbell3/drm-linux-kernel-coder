@@ -1,0 +1,10 @@
+[package]
+name = "drm-observe"
+description = "Application/workload identity resolution and per-execution measurement for the DRM Adaptive Execution Layer"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]

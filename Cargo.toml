@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/drm-core",
     "crates/drm-exec",
+    "crates/drm-observe",
     "crates/drmd",
 ]
 

@@ -18,6 +18,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "drm-observe"
+version = "1.0.0"
+
+[[package]]
 name = "drmd"
 version = "1.0.0"
 dependencies = [
