@@ -431,9 +431,23 @@ all 7 of spec §16's adversarial checks. `cargo clippy --workspace
   not begin with arbitrary self-modifying kernel code."
 - VM image builds (see the `server`/`desktop` branches) depend on
   network access to a Debian mirror and root privileges in the build
-  environment; whether they were actually built and boot-tested in a
-  given environment should be verified by running the reproduction
-  commands there, not assumed from the scripts' existence.
+  environment. Both were actually built and boot-tested end to end in
+  this session (QEMU, software emulation, no `/dev/kvm` available):
+  the server image reached a login prompt with all four
+  `drmd@<app>.service` instances started (`PASS: observed a drmd unit
+  starting within 450s`); the desktop image reached a working XFCE/
+  lightdm graphical session (`PASS: observed lightdm reaching
+  graphical.target within 450s`). The first server boot attempt
+  surfaced and fixed two real issues (a console-truncation bug in the
+  boot-smoke-test detector, and a boot-time demo unit that is now
+  disabled by default rather than shipped unreliable under emulation)
+  -- see `docs/reports/server-experiment.md`'s "Real boot verification"
+  section for the full account, not just the final green result. Not
+  independently confirmed: whether the desktop image's user-level
+  `drmd` service is actually running once inside the interactive
+  session (the serial-console smoke test cannot observe a user unit's
+  status the way it can a system unit's) -- see
+  `docs/reports/desktop-experiment.md`.
 
 ## 15. Exact reproduction commands
 
