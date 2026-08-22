@@ -35,6 +35,8 @@ version = "1.0.0"
 dependencies = [
  "drm-core",
  "drm-exec",
+ "drm-observe",
+ "drm-opt",
 ]
 
 [[package]]

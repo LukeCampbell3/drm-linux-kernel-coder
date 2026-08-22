@@ -3,6 +3,9 @@
 //! Subcommands:
 //! - `selftest`: fast in-memory invariant check (no I/O).
 //! - `bench [--out DIR]`: run the frozen 99-episode regression workload.
+//! - `simulate <server|desktop> [--out DIR]`: run the comparative
+//!   benchmark suite (five baselines + three DRM configurations) against
+//!   a deterministic synthetic workload and write CSVs + a summary.
 //! - `serve [--socket P] [--work D] [--state D] [--consolidate-ms N]`:
 //!   run the long-lived episode-submission daemon.
 //! - `submit ...`: submit one episode to a running daemon.
@@ -24,6 +27,7 @@ mod protocol;
 mod registry_state;
 mod selftest;
 mod serve;
+mod simulate;
 mod workload;
 
 use std::path::PathBuf;
@@ -40,6 +44,7 @@ fn print_help() {
 Usage:\n  \
   drmd selftest\n  \
   drmd bench [--out DIR]\n  \
+  drmd simulate <server|desktop> [--out DIR]\n  \
   drmd serve [--socket PATH] [--work DIR] [--state DIR] [--consolidate-ms N]\n  \
   drmd submit --task NAME --ops cap1,cap2,... [--app ID] [--workload ID] [--host ID] [--user ID] [--socket PATH] [--source PATH] [--output PATH] [--url PATH] [--ancestral]\n  \
   drmd status [--socket PATH]\n  \
@@ -86,6 +91,7 @@ fn main() -> ExitCode {
             }
         }
         "bench" => cmd_bench(rest),
+        "simulate" => cmd_simulate(rest),
         "serve" => cmd_serve(rest),
         "submit" => cmd_submit(rest),
         "status" => cmd_status(rest),
@@ -138,6 +144,55 @@ fn cmd_bench(args: &[String]) -> ExitCode {
         }
         Err(e) => {
             eprintln!("drmd: bench failed: {e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_simulate(args: &[String]) -> ExitCode {
+    let Some(which) = positional(args) else {
+        eprintln!("drmd: simulate requires a positional target (server|desktop)");
+        return ExitCode::FAILURE;
+    };
+    let which = which.to_string();
+    let parsed = ParsedArgs::parse(&args[1..]);
+    let out = parsed.path_or("out", "results/simulate");
+
+    let result = match which.as_str() {
+        "server" => simulate::run_server(&out),
+        "desktop" => simulate::run_desktop(&out),
+        other => {
+            eprintln!("drmd: unknown simulate target `{other}` (expected `server` or `desktop`)");
+            return ExitCode::FAILURE;
+        }
+    };
+    match result {
+        Ok(report) => {
+            println!(
+                "simulation={} episodes={} engines={}",
+                report.scenario_name,
+                report.episodes,
+                report.engines.len()
+            );
+            let failed: Vec<&str> = report
+                .adversarial_checks
+                .iter()
+                .filter(|c| !c.passed)
+                .map(|c| c.name.as_str())
+                .collect();
+            for c in &report.adversarial_checks {
+                println!("[{}] {}", if c.passed { "PASS" } else { "FAIL" }, c.name);
+            }
+            println!("report written to {}", out.display());
+            if failed.is_empty() {
+                ExitCode::SUCCESS
+            } else {
+                eprintln!("drmd: {} adversarial check(s) failed: {}", failed.len(), failed.join(", "));
+                ExitCode::FAILURE
+            }
+        }
+        Err(e) => {
+            eprintln!("drmd: simulate failed: {e}");
             ExitCode::FAILURE
         }
     }
