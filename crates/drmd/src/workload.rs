@@ -10,7 +10,7 @@
 //! algorithm -- not on executed payload content -- so this port reproduces
 //! the documented deterministic values exactly. See `tests/bench_regression.rs`.
 
-use drm_core::{Episode, Seq};
+use drm_core::{Episode, ExecutionContext, Seq};
 
 fn seq(xs: &[&str]) -> Seq {
     xs.iter().map(|x| x.to_string()).collect()
@@ -31,7 +31,7 @@ impl Builder {
         let output = output.map(|s| s.to_string()).unwrap_or_else(|| format!("outputs/{task}.txt"));
         self.episodes.push(Episode {
             idx: self.idx,
-            task: task.to_string(),
+            ctx: ExecutionContext::simple("bench", task),
             phase: phase.to_string(),
             ops,
             source: source.to_string(),
@@ -181,8 +181,8 @@ pub fn classic_workload() -> Vec<Episode> {
     // 16 exact repeats of a subset of the novel tasks (77 episodes so far).
     for n in 0..16usize {
         let task = format!("novel_{n:02}");
-        let e = snapshot.iter().find(|e| e.task == task).unwrap().clone();
-        b.add(&e.task, "repeat", e.ops.clone(), &e.source, Some(&e.output), &e.url_path, false);
+        let e = snapshot.iter().find(|e| e.task() == task).unwrap().clone();
+        b.add(e.task(), "repeat", e.ops.clone(), &e.source, Some(&e.output), &e.url_path, false);
     }
 
     // Structural drift on 4 daily routines (81 episodes so far).
@@ -246,10 +246,10 @@ pub fn classic_workload() -> Vec<Episode> {
     // Forced ancestral recovery + one-shot post-recovery repeat, for 4 tasks
     // that have by now aged out of the active LRU set (99 episodes total).
     for task in ["daily_http", "daily_file", "daily_hash", "daily_ipc"] {
-        let e = snapshot.iter().find(|e| e.task == task).unwrap().clone();
-        b.add(&e.task, "ancestral", e.ops.clone(), &e.source, Some(&e.output), &e.url_path, true);
+        let e = snapshot.iter().find(|e| e.task() == task).unwrap().clone();
+        b.add(e.task(), "ancestral", e.ops.clone(), &e.source, Some(&e.output), &e.url_path, true);
         b.add(
-            &e.task,
+            e.task(),
             "post_recovery",
             e.ops.clone(),
             &e.source,

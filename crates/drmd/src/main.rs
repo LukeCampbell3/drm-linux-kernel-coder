@@ -1,18 +1,27 @@
-//! `drmd`: the DRM O/D/C developmental runtime service and CLI.
+//! `drmd`: the DRM Adaptive Execution Layer service and CLI.
 //!
 //! Subcommands:
 //! - `selftest`: fast in-memory invariant check (no I/O).
 //! - `bench [--out DIR]`: run the frozen 99-episode regression workload.
-//! - `serve [--socket P] [--work D] [--consolidate-ms N]`: run the
-//!   long-lived episode-submission daemon.
+//! - `serve [--socket P] [--work D] [--state D] [--consolidate-ms N]`:
+//!   run the long-lived episode-submission daemon.
 //! - `submit ...`: submit one episode to a running daemon.
 //! - `status [--socket P]`: query a running daemon's state.
+//! - `applications`: list known applications.
+//! - `application <id>`: one application's learned-state summary.
+//! - `workload <id>`: which applications/words a workload identity uses.
+//! - `learned [--app ID]`: every learned word, optionally filtered.
+//! - `optimizations`: verified executable specializations.
+//! - `metrics`: aggregate execution metrics.
+//! - `explain <optimization-id>`: detail on one specialization.
+//! - `reset <scope>`: `all` or `application:<id>`.
 
 mod bench;
 mod cli;
 mod client;
 mod fmt;
 mod protocol;
+mod registry_state;
 mod selftest;
 mod serve;
 mod workload;
@@ -21,23 +30,32 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use cli::{ParsedArgs, DEFAULT_BENCH_OUT, DEFAULT_SOCKET, DEFAULT_WORK_DIR};
+use cli::{positional, ParsedArgs, DEFAULT_BENCH_OUT, DEFAULT_SOCKET, DEFAULT_STATE_DIR, DEFAULT_WORK_DIR};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn print_help() {
     println!(
-        "drmd {VERSION} -- DRM O/D/C developmental runtime\n\n\
+        "drmd {VERSION} -- DRM Adaptive Execution Layer\n\n\
 Usage:\n  \
   drmd selftest\n  \
   drmd bench [--out DIR]\n  \
-  drmd serve [--socket PATH] [--work DIR] [--consolidate-ms N]\n  \
-  drmd submit --task NAME --ops cap1,cap2,... [--socket PATH] [--source PATH] [--output PATH] [--url PATH] [--ancestral]\n  \
+  drmd serve [--socket PATH] [--work DIR] [--state DIR] [--consolidate-ms N]\n  \
+  drmd submit --task NAME --ops cap1,cap2,... [--app ID] [--workload ID] [--host ID] [--user ID] [--socket PATH] [--source PATH] [--output PATH] [--url PATH] [--ancestral]\n  \
   drmd status [--socket PATH]\n  \
+  drmd applications [--socket PATH]\n  \
+  drmd application <id> [--socket PATH]\n  \
+  drmd workload <id> [--socket PATH]\n  \
+  drmd learned [--app ID] [--socket PATH]\n  \
+  drmd optimizations [--socket PATH]\n  \
+  drmd metrics [--socket PATH]\n  \
+  drmd explain <optimization-id> [--socket PATH]\n  \
+  drmd reset <all|application:ID> [--socket PATH]\n  \
   drmd --version | --help\n\n\
 Defaults:\n  \
   socket = {DEFAULT_SOCKET}\n  \
-  work   = {DEFAULT_WORK_DIR}\n"
+  work   = {DEFAULT_WORK_DIR}\n  \
+  state  = {DEFAULT_STATE_DIR}\n"
     );
 }
 
@@ -71,6 +89,14 @@ fn main() -> ExitCode {
         "serve" => cmd_serve(rest),
         "submit" => cmd_submit(rest),
         "status" => cmd_status(rest),
+        "applications" => cmd_simple(rest, client::applications),
+        "application" => cmd_with_id(rest, "application", client::application),
+        "workload" => cmd_with_id(rest, "workload id", client::workload),
+        "learned" => cmd_learned(rest),
+        "optimizations" => cmd_simple(rest, client::optimizations),
+        "metrics" => cmd_simple(rest, client::metrics),
+        "explain" => cmd_with_id(rest, "optimization id", client::explain),
+        "reset" => cmd_with_id(rest, "scope (all|application:ID)", client::reset),
         other => {
             eprintln!("drmd: unknown command `{other}`\n");
             print_help();
@@ -121,6 +147,7 @@ fn cmd_serve(args: &[String]) -> ExitCode {
     let parsed = ParsedArgs::parse(args);
     let socket_path = parsed.path_or("socket", DEFAULT_SOCKET);
     let work_dir = parsed.path_or("work", DEFAULT_WORK_DIR);
+    let state_dir = parsed.path_or("state", DEFAULT_STATE_DIR);
     let consolidate_ms: u64 = parsed.get("consolidate-ms").and_then(|s| s.parse().ok()).unwrap_or(250);
 
     if let Some(parent) = socket_path.parent() {
@@ -133,10 +160,15 @@ fn cmd_serve(args: &[String]) -> ExitCode {
         eprintln!("drmd: failed to create work directory {}: {e}", work_dir.display());
         return ExitCode::FAILURE;
     }
+    if let Err(e) = std::fs::create_dir_all(&state_dir) {
+        eprintln!("drmd: failed to create state directory {}: {e}", state_dir.display());
+        return ExitCode::FAILURE;
+    }
 
     let opts = serve::ServeOptions {
         socket_path,
         work_dir,
+        state_dir,
         consolidation_interval: Duration::from_millis(consolidate_ms),
     };
     match serve::run(opts) {
@@ -166,6 +198,10 @@ fn cmd_submit(args: &[String]) -> ExitCode {
         output: parsed.get_or("output", ""),
         url: parsed.get_or("url", ""),
         ancestral: parsed.has("ancestral"),
+        application: parsed.get("app").map(|s| s.to_string()),
+        workload: parsed.get("workload").map(|s| s.to_string()),
+        host: parsed.get("host").map(|s| s.to_string()),
+        user: parsed.get("user").map(|s| s.to_string()),
     };
     match client::submit(&socket, &submit_args) {
         Ok(response) => {
@@ -180,15 +216,42 @@ fn cmd_submit(args: &[String]) -> ExitCode {
 }
 
 fn cmd_status(args: &[String]) -> ExitCode {
+    cmd_simple(args, client::status)
+}
+
+/// Subcommands that take only `--socket PATH` and no other arguments.
+fn cmd_simple(args: &[String], f: fn(&std::path::Path) -> std::io::Result<String>) -> ExitCode {
     let parsed = ParsedArgs::parse(args);
     let socket: PathBuf = parsed.path_or("socket", DEFAULT_SOCKET);
-    match client::status(&socket) {
+    respond(f(&socket))
+}
+
+/// Subcommands of the shape `drmd <command> <id> [--socket PATH]`.
+fn cmd_with_id(args: &[String], id_desc: &str, f: fn(&std::path::Path, &str) -> std::io::Result<String>) -> ExitCode {
+    let Some(id) = positional(args) else {
+        eprintln!("drmd: this command requires a positional {id_desc}");
+        return ExitCode::FAILURE;
+    };
+    let parsed = ParsedArgs::parse(&args[1..]);
+    let socket: PathBuf = parsed.path_or("socket", DEFAULT_SOCKET);
+    respond(f(&socket, id))
+}
+
+fn cmd_learned(args: &[String]) -> ExitCode {
+    let parsed = ParsedArgs::parse(args);
+    let socket: PathBuf = parsed.path_or("socket", DEFAULT_SOCKET);
+    let app_filter = parsed.get("app");
+    respond(client::learned(&socket, app_filter))
+}
+
+fn respond(result: std::io::Result<String>) -> ExitCode {
+    match result {
         Ok(response) => {
             println!("{response}");
             ExitCode::SUCCESS
         }
         Err(e) => {
-            eprintln!("drmd: status failed: {e}");
+            eprintln!("drmd: request failed: {e}");
             ExitCode::FAILURE
         }
     }

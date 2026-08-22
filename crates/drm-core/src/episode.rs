@@ -1,12 +1,16 @@
+use crate::identity::ExecutionContext;
 use crate::vocabulary::Seq;
 
-/// One unit of planning/execution work: a task identity paired with the
-/// capability sequence it wants to run, plus enough addressing information
-/// for an executor to act on it.
+/// One unit of planning/execution work: a hierarchical execution identity
+/// paired with the capability sequence it wants to run, plus enough
+/// addressing information for an executor to act on it.
 #[derive(Clone, Debug, Default)]
 pub struct Episode {
     pub idx: usize,
-    pub task: String,
+    /// Which host/user/application/workload/task produced this episode.
+    /// Planning identity (what Phase 1 called `task`) is `ctx.task_id`;
+    /// see [`Episode::task`] for the common-case accessor.
+    pub ctx: ExecutionContext,
     pub phase: String,
     pub ops: Seq,
     pub source: String,
@@ -19,10 +23,34 @@ pub struct Episode {
 }
 
 impl Episode {
+    /// The task identity string -- `ctx.task_id`. Most planning logic
+    /// only ever needs this, not the rest of the hierarchy.
+    pub fn task(&self) -> &str {
+        &self.ctx.task_id
+    }
+
+    /// Single-application, single-workload construction: the common case
+    /// for tests, benchmarks, and callers that don't yet distinguish a
+    /// task from its workload family.
     pub fn new(idx: usize, task: impl Into<String>, phase: impl Into<String>, ops: Seq) -> Self {
+        let task = task.into();
         Self {
             idx,
-            task: task.into(),
+            ctx: ExecutionContext::simple("default", task),
+            phase: phase.into(),
+            ops,
+            source: String::new(),
+            output: String::new(),
+            url_path: String::new(),
+            ancestral: false,
+        }
+    }
+
+    /// Full construction with an explicit hierarchical identity.
+    pub fn with_ctx(idx: usize, ctx: ExecutionContext, phase: impl Into<String>, ops: Seq) -> Self {
+        Self {
+            idx,
+            ctx,
             phase: phase.into(),
             ops,
             source: String::new(),

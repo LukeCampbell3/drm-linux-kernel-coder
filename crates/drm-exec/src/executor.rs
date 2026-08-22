@@ -130,7 +130,7 @@ impl LiveExecutor {
                 }
                 "ipc.request" => {
                     let payload = if data.is_empty() {
-                        ep.task.clone()
+                        ep.task().to_string()
                     } else {
                         data.chars().take(80).collect()
                     };

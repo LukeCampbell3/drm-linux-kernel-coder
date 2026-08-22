@@ -61,7 +61,7 @@ pub fn run(out_dir: &Path) -> std::io::Result<BenchReport> {
             "{}",
             csv_line(&[
                 ep.idx.to_string(),
-                ep.task.clone(),
+                ep.task().to_string(),
                 ep.phase.clone(),
                 (ok as u8).to_string(),
                 format!("{wall:.3}"),

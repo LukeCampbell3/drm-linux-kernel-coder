@@ -10,7 +10,17 @@ use std::path::PathBuf;
 
 pub const DEFAULT_SOCKET: &str = "/run/drmd/drmd.sock";
 pub const DEFAULT_WORK_DIR: &str = "/var/lib/drmd";
+pub const DEFAULT_STATE_DIR: &str = "/var/lib/drmd/state";
 pub const DEFAULT_BENCH_OUT: &str = "results";
+
+/// The first argument that isn't part of a `--flag [value]` pair -- used
+/// by subcommands with one required positional argument (`application
+/// <id>`, `workload <id>`, `explain <id>`, `reset <scope>`). Must be
+/// `args[0]`: these subcommands always take their identifier first,
+/// flags after, matching every example in the spec's CLI section.
+pub fn positional(args: &[String]) -> Option<&str> {
+    args.first().filter(|a| !a.starts_with("--")).map(|s| s.as_str())
+}
 
 pub struct ParsedArgs {
     pub flags: HashMap<String, String>,

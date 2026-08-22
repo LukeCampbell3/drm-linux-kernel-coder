@@ -194,7 +194,7 @@ impl HybridPlanner {
 
     fn update_transfer(&mut self, ep: &Episode) {
         for (_, p) in self.provisional.iter_mut() {
-            if Self::contains_seq(&ep.ops, &p.raw) && !p.birth_tasks.contains(&ep.task) {
+            if Self::contains_seq(&ep.ops, &p.raw) && !p.birth_tasks.contains(ep.task()) {
                 p.transfer_hits += 1;
                 p.last_transfer_step = self.struct_step;
             }
@@ -296,8 +296,9 @@ impl HybridPlanner {
     }
 
     pub fn plan(&mut self, ep: &Episode) -> PlanMetrics {
+        let task = ep.task();
         let mut m = PlanMetrics::default();
-        if let Some(old) = self.base.active.get(&ep.task).cloned() {
+        if let Some(old) = self.base.active.get(task).cloned() {
             if old == ep.ops {
                 m.semantic = 1;
             } else {
@@ -306,7 +307,7 @@ impl HybridPlanner {
                 m.local_repair = 1;
                 m.structural_change += 1;
             }
-        } else if let Some(old) = self.base.history.get(&ep.task).cloned() {
+        } else if let Some(old) = self.base.history.get(task).cloned() {
             if ep.ancestral {
                 m.recovery = 1;
                 m.semantic = 1usize.max(self.semantic_cost(&ep.ops));
@@ -324,18 +325,18 @@ impl HybridPlanner {
             m.structural_change += 1;
         }
 
-        let new_structural_evidence = self.base.history.get(&ep.task).map(|old| old != &ep.ops).unwrap_or(true);
+        let new_structural_evidence = self.base.history.get(task).map(|old| old != &ep.ops).unwrap_or(true);
         self.base.version += 1;
-        self.base.history.insert(ep.task.clone(), ep.ops.clone());
-        self.base.history_version.insert(ep.task.clone(), self.base.version);
+        self.base.history.insert(task.to_string(), ep.ops.clone());
+        self.base.history_version.insert(task.to_string(), self.base.version);
         if new_structural_evidence {
             self.struct_step += 1;
             self.update_transfer(ep);
-            self.pending_touched_p = self.note_p(&ep.task, &ep.ops);
-            self.pending_touched = self.base.note_subseqs(&ep.task, &ep.ops);
+            self.pending_touched_p = self.note_p(task, &ep.ops);
+            self.pending_touched = self.base.note_subseqs(task, &ep.ops);
             self.pending_consolidation = true;
         }
-        self.base.touch(&ep.task, &ep.ops);
+        self.base.touch(task, &ep.ops);
 
         m.derived = self.base.vocab.derived.len();
         m.active = self.base.active.len();
@@ -358,6 +359,57 @@ impl HybridPlanner {
     pub fn provisional_words(&self) -> usize {
         self.provisional.len()
     }
+
+    /// Current provisional word names -- used by `registry::Registry` to
+    /// diff admission/expiry across a `consolidate_pending()` call
+    /// without needing to change this planner's own internals.
+    pub fn provisional_word_names(&self) -> std::collections::HashSet<String> {
+        self.provisional.keys().cloned().collect()
+    }
+
+    /// Current provisional words as (name, raw pattern) pairs, for
+    /// `persistence::to_snapshot`. The rest of `PWord` (transfer hits,
+    /// birth tasks, last-transfer step) is deliberately not persisted --
+    /// see `restore_provisional`.
+    pub(crate) fn provisional_raw(&self) -> std::collections::HashMap<String, Seq> {
+        self.provisional.iter().map(|(k, v)| (k.clone(), v.raw.clone())).collect()
+    }
+
+    /// Rebuild provisional state from persisted (name, raw pattern)
+    /// pairs. Transient bookkeeping (transfer hits, birth-task set) is
+    /// not persisted and restarts empty: a restored provisional word
+    /// keeps compressing immediately (useful right away) but its expiry
+    /// grace period restarts rather than resuming mid-count. Documented
+    /// v1 limitation, not a silent behavior change.
+    pub(crate) fn restore_provisional(&mut self, entries: impl IntoIterator<Item = (String, Seq)>) {
+        for (name, raw) in entries {
+            self.provisional.insert(
+                name,
+                PWord {
+                    raw,
+                    birth_tasks: std::collections::HashSet::new(),
+                    last_transfer_step: self.struct_step,
+                    transfer_hits: 0,
+                },
+            );
+        }
+    }
+
+    /// Rebuild permanent vocabulary from a persisted snapshot.
+    pub(crate) fn restore_permanent(&mut self, entries: impl IntoIterator<Item = (String, Seq)>, counter: usize) {
+        for (name, def) in entries {
+            self.base.vocab.derived.insert(name, def);
+        }
+        self.base.vocab.counter = self.base.vocab.counter.max(counter);
+    }
+
+    /// Rebuild per-task history from a persisted snapshot -- needed so
+    /// MDL scoring can resume without replaying every prior episode.
+    pub(crate) fn restore_history(&mut self, entries: impl IntoIterator<Item = (String, Seq)>) {
+        for (task, ops) in entries {
+            self.base.history.insert(task, ops);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -371,7 +423,7 @@ mod tests {
     fn ep(idx: usize, task: &str, ops: Seq) -> Episode {
         Episode {
             idx,
-            task: task.into(),
+            ctx: crate::ExecutionContext::simple("test-app", task),
             phase: "x".into(),
             ops,
             source: "x".into(),

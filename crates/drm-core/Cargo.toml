@@ -8,5 +8,16 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+# The one deliberate exception to this workspace's zero-dependency
+# convention (see docs/ARCHITECTURE.md "Persistence"). Registry state is
+# now a much larger nested structure (per-application vocabularies, word
+# metadata, transfer evidence) that must round-trip correctly and reject
+# incompatible schema versions -- hand-rolled JSON parsing at this size is
+# a real correctness risk, not a purity concern worth keeping. serde/
+# serde_json are small, extremely widely audited, and add no I/O or
+# network dependency of their own; `cargo build` still never touches the
+# network once `Cargo.lock` is fetched.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [dev-dependencies]

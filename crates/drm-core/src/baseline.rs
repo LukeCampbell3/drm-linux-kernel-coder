@@ -46,7 +46,7 @@ impl Baseline {
                 m.semantic = ep.ops.len();
             }
             BaselineKind::TemplateCache | BaselineKind::CheckpointReplay => {
-                match self.seen.get(&ep.task) {
+                match self.seen.get(ep.task()) {
                     None => {
                         m.semantic = ep.ops.len();
                         m.structural_change = 1;
@@ -70,7 +70,7 @@ impl Baseline {
                 }
             }
         }
-        self.seen.insert(ep.task.clone(), ep.ops.clone());
+        self.seen.insert(ep.task().to_string(), ep.ops.clone());
         m.structure_bytes = self.structure_bytes();
         m
     }
