@@ -124,11 +124,24 @@ chroot "$MNT" /debootstrap/debootstrap --second-stage
 
 ROOT_UUID="$(blkid -s UUID -o value "$PART")"
 
-log "installing drmd binary and unit"
+log "installing drmd binary and units"
 install -D -m 755 "$BINARY" "$MNT/usr/local/bin/drmd"
 install -D -m 644 "$REPO_ROOT/packaging/systemd/drmd.service" "$MNT/etc/systemd/system/drmd.service"
+install -D -m 644 "$REPO_ROOT/packaging/systemd/drmd@.service" "$MNT/etc/systemd/system/drmd@.service"
+install -D -m 644 "$REPO_ROOT/packaging/systemd/drmd-simulate-server.service" "$MNT/etc/systemd/system/drmd-simulate-server.service"
 mkdir -p "$MNT/etc/systemd/system/multi-user.target.wants"
-ln -sf /etc/systemd/system/drmd.service "$MNT/etc/systemd/system/multi-user.target.wants/drmd.service"
+# The server image's default is the fully-isolated per-application
+# deployment model (spec S17/S18): four named `drmd@<app>.service`
+# instances, one OS process each, instead of the single shared
+# drmd.service (installed but left disabled -- an operator who wants
+# cross-application global promotion instead can `systemctl enable
+# --now drmd.service` and disable the per-app instances). See
+# drmd@.service's own doc comment for the isolation-vs-cross-app-
+# learning tradeoff this default makes explicit.
+for app in api-service report-worker build-worker job-processor; do
+  ln -sf "/etc/systemd/system/drmd@.service" "$MNT/etc/systemd/system/multi-user.target.wants/drmd@${app}.service"
+done
+ln -sf /etc/systemd/system/drmd-simulate-server.service "$MNT/etc/systemd/system/multi-user.target.wants/drmd-simulate-server.service"
 
 log "writing base system configuration"
 echo "$HOSTNAME_VALUE" > "$MNT/etc/hostname"
@@ -188,9 +201,14 @@ cat > "$MNT/etc/profile.d/zz-drmd-welcome.sh" <<'EOF'
 if [ -z "${DRMD_WELCOME_SHOWN:-}" ] && [ -t 1 ]; then
   export DRMD_WELCOME_SHOWN=1
   echo
-  echo "drmd is running as a systemd service (systemctl status drmd)."
-  echo "  drmd status --socket /run/drmd/drmd.sock"
-  echo "  drmd submit --socket /run/drmd/drmd.sock --task demo --ops fs.read,transform.summarize,fs.write,notify.send --source inputs/demo.csv"
+  echo "drmd is running as four per-application systemd instances"
+  echo "(systemctl status 'drmd@*'), one process/socket/state directory each:"
+  echo "  drmd status --socket /run/drmd/api-service.sock"
+  echo "  drmd application api-service --socket /run/drmd/api-service.sock"
+  echo "  drmd submit --socket /run/drmd/api-service.sock --app api-service --task demo --ops fs.read,transform.summarize,fs.write,notify.send --source inputs/demo.csv"
+  echo "Comparative benchmark results from boot: /var/lib/drmd-demo/simulate/ (systemctl status drmd-simulate-server)"
+  echo "The single shared daemon (cross-application learning) is installed but"
+  echo "disabled by default: systemctl enable --now drmd.service"
   echo "See /usr/local/share/doc/drmd/ for full documentation."
   echo
 fi
@@ -213,7 +231,12 @@ fi
 log "configuring accounts and services inside chroot"
 chroot "$MNT" /bin/bash -eux <<CHROOT
 export DEBIAN_FRONTEND=noninteractive
-systemctl enable systemd-networkd ssh drmd || true
+# drmd/drmd@/drmd-simulate-server are enabled via the
+# multi-user.target.wants symlinks installed above, not here -- this
+# server image's default is the per-application drmd@<app>.service
+# instances, not the single shared drmd.service, so drmd is
+# deliberately left off this line.
+systemctl enable systemd-networkd ssh || true
 
 id -u drm >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo drm
 echo "drm:${ADMIN_PASSWORD}" | chpasswd

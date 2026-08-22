@@ -1,0 +1,69 @@
+[Unit]
+Description=DRM Adaptive Execution Layer daemon (application: %i)
+Documentation=https://github.com/LukeCampbell3/drm-linux-kernel-coder
+After=network.target
+
+[Service]
+Type=simple
+# Each instance gets its own socket, work directory, and persisted
+# state -- a stronger isolation guarantee than the single shared
+# drmd.service's in-process Registry (application_id) isolation: a bug,
+# resource exhaustion, or compromise in one application's instance can
+# neither read nor corrupt another's, because they are different OS
+# processes with different DynamicUser UIDs and different files, not
+# just different HashMap entries in one process.
+#
+# The tradeoff, stated explicitly rather than left implicit: cross-
+# application global promotion (spec S3 -- "did this transfer beyond
+# its birth application?") can only be detected by a single process
+# that observes multiple applications' vocabularies at once. A fleet of
+# fully-isolated per-app instances forgoes that; each instance only
+# ever learns %i's own application/workload/provisional tiers. Global
+# promotion is a `drmd.service` (single shared daemon) capability, not
+# a `drmd@.service` one. Operators who want isolation-by-default with
+# no cross-application learning use this template; operators who want
+# cross-application transfer use the shared instance instead (they are
+# not mutually exclusive to install, only to enable for the same
+# application at once).
+ExecStart=/usr/local/bin/drmd serve --socket /run/drmd/%i.sock --work /var/lib/drmd/%i --state /var/lib/drmd/%i/state
+Restart=on-failure
+RestartSec=2s
+
+DynamicUser=yes
+StateDirectory=drmd/%i
+# Every instance shares one RuntimeDirectory (/run/drmd) so each can
+# place its own %i.sock there -- RuntimeDirectoryPreserve=yes is
+# required for a template unit sharing a RuntimeDirectory: the default
+# (no) would have systemd delete the *entire* /run/drmd tree, including
+# every other instance's live socket, whenever any single instance
+# stops.
+RuntimeDirectory=drmd
+RuntimeDirectoryPreserve=yes
+
+# Same sandboxing as the shared drmd.service -- see its unit file for
+# the full rationale per directive.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectProc=invisible
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

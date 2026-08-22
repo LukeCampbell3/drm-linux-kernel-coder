@@ -1,0 +1,41 @@
+[Unit]
+Description=DRM server benchmark suite (drmd simulate server) -- boot-time demo
+Documentation=https://github.com/LukeCampbell3/drm-linux-kernel-coder
+After=network.target
+# Independent of drmd@*.service: `drmd simulate` builds its own
+# isolated LiveExecutor instances per engine, entirely separate from
+# the live per-application daemons -- it demonstrates the comparative
+# benchmark suite (spec S13-S16), not the live daemons themselves.
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/drmd simulate server --out /var/lib/drmd-demo/simulate
+User=drmd-demo
+Group=drmd-demo
+DynamicUser=yes
+StateDirectory=drmd-demo
+WorkingDirectory=/var/lib/drmd-demo
+
+# Same sandboxing posture as the live daemons; this is real code doing
+# real filesystem I/O and spawning real child processes
+# (process.run/sha256sum), same as the daemons it is benchmarking, just
+# against its own scratch state rather than production traffic.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RemoveIPC=yes
+
+[Install]
+WantedBy=multi-user.target
