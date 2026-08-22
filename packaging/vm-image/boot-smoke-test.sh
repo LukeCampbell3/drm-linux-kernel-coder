@@ -54,7 +54,15 @@ lightdm_seen=0
 graphical_found=0
 while [ $SECONDS -lt $deadline ]; do
   if [ -f "$SERIAL_LOG" ]; then
-    grep -aqE "Started.*drmd(@[^[:space:]]+)?\.service" "$SERIAL_LOG" 2>/dev/null && drmd_found=1
+    # Not anchored on a trailing ".service": a systemd console status
+    # line is truncated to console width, and for a long unit
+    # description (e.g. drmd@<app>.service's "daemon (application:
+    # <app>)") the truncation can land *inside* the unit name itself
+    # (observed in practice: "Started drmd@api-service.s…daemon
+    # (application: api-service)."), before ".service" ever appears
+    # intact. "Started" and "drmd" co-occurring on one real console
+    # line is specific enough without requiring the suffix to survive.
+    grep -aqE "Started.*drmd" "$SERIAL_LOG" 2>/dev/null && drmd_found=1
     grep -aq "lightdm" "$SERIAL_LOG" 2>/dev/null && lightdm_seen=1
     grep -aqE "(Reached target Graphical Interface|Started.*[Ll]ightdm)" "$SERIAL_LOG" 2>/dev/null && graphical_found=1
   fi
