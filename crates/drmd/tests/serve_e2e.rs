@@ -3,21 +3,38 @@
 //! binary for both sides.
 
 use std::io::Read;
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 
 fn drmd() -> &'static str {
     env!("CARGO_BIN_EXE_drmd")
 }
 
-fn wait_for_socket(path: &std::path::Path) {
-    for _ in 0..100 {
+/// Poll for the server's Unix socket to appear, bailing out early (with
+/// captured stderr) if the child has already exited instead of always
+/// burning the full timeout. The budget is generous (10s) because CI
+/// runners can be significantly slower/noisier than local dev boxes, and
+/// this test spawns a real subprocess that does real startup work
+/// (state load, executor fixture servers, background consolidation
+/// thread) before it ever reaches `UnixListener::bind`.
+fn wait_for_socket(path: &std::path::Path, child: &mut Child) {
+    for _ in 0..200 {
         if path.exists() {
             return;
         }
+        if let Ok(Some(status)) = child.try_wait() {
+            let mut stderr = String::new();
+            if let Some(mut s) = child.stderr.take() {
+                let _ = s.read_to_string(&mut stderr);
+            }
+            panic!(
+                "drmd serve exited early ({status}) before binding socket {}: {stderr}",
+                path.display()
+            );
+        }
         std::thread::sleep(Duration::from_millis(50));
     }
-    panic!("socket {} never appeared", path.display());
+    panic!("socket {} never appeared after 10s", path.display());
 }
 
 #[test]
@@ -41,7 +58,7 @@ fn serve_accepts_submit_and_status_over_real_socket() {
         .spawn()
         .expect("failed to spawn drmd serve");
 
-    wait_for_socket(&socket);
+    wait_for_socket(&socket, &mut server);
 
     // Seed a fixture the submitted episode's fs.read capability can read.
     std::fs::create_dir_all(work.join("inputs")).unwrap();
