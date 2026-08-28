@@ -16,7 +16,7 @@ use std::time::{Duration, Instant};
 
 use drm_core::{root_expansion, Episode};
 
-use crate::code::CodeConfig;
+use crate::code::evolve_task;
 use crate::servers::{TcpFixtureServer, UnixFixtureServer};
 use crate::specialize::SpecializationSet;
 use crate::web::WebConfig;
@@ -30,8 +30,6 @@ pub enum ExecError {
     WebDenied(String),
     WebBridge(String),
     CodeDenied(String),
-    CodePatch(String),
-    CodeVerification(String),
 }
 
 impl std::fmt::Display for ExecError {
@@ -44,8 +42,6 @@ impl std::fmt::Display for ExecError {
             ExecError::WebDenied(reason) => write!(f, "web access denied: {reason}"),
             ExecError::WebBridge(reason) => write!(f, "Selenium bridge error: {reason}"),
             ExecError::CodeDenied(reason) => write!(f, "code change denied: {reason}"),
-            ExecError::CodePatch(reason) => write!(f, "code patch failed: {reason}"),
-            ExecError::CodeVerification(reason) => write!(f, "code verification failed: {reason}"),
         }
     }
 }
@@ -69,7 +65,8 @@ pub struct LiveExecutor {
     pub ipc_requests: usize,
     pub timer_events: usize,
     pub web_requests: usize,
-    pub code_changes: usize,
+    pub mutation_candidates: usize,
+    pub mutations_committed: usize,
     pub root_counts: HashMap<String, usize>,
     /// Opt-in bridge to `drm-opt`'s specialization lifecycle (see
     /// `crate::specialize` module docs). `None` (the default from
@@ -90,8 +87,6 @@ pub struct LiveExecutor {
     pub optimizations_used: Vec<String>,
     /// Selenium access is disabled unless configured explicitly.
     pub web: Option<WebConfig>,
-    /// Source mutation is disabled unless a code root and allowlist are configured.
-    pub code: Option<CodeConfig>,
 }
 
 impl LiveExecutor {
@@ -121,14 +116,14 @@ impl LiveExecutor {
             ipc_requests: 0,
             timer_events: 0,
             web_requests: 0,
-            code_changes: 0,
+            mutation_candidates: 0,
+            mutations_committed: 0,
             root_counts: HashMap::new(),
             specializations: None,
             reads_avoided: 0,
             transforms_memoized: 0,
             optimizations_used: Vec::new(),
             web: WebConfig::from_env(),
-            code: CodeConfig::from_env(),
         })
     }
 
@@ -146,10 +141,6 @@ impl LiveExecutor {
         self
     }
 
-    pub fn with_code(mut self, config: CodeConfig) -> Self {
-        self.code = Some(config);
-        self
-    }
 
     fn note_roots(&mut self, cap: &str) {
         for r in root_expansion(cap) {
@@ -252,15 +243,12 @@ impl LiveExecutor {
                     data = web.fetch(&ep.url_path, &ep.ctx.application_id)?;
                     self.web_requests += 1;
                 }
-                "code.patch" => {
-                    let code = self.code.as_ref().ok_or_else(|| {
-                        ExecError::CodeDenied("set DRMD_CODE_ROOT and DRMD_CODE_ALLOWED_PATHS to enable source changes".into())
-                    })?;
-                    let patch = fs::read(self.work.join(&ep.source))?;
-                    code.apply(&patch)?;
-                    data = format!("applied and verified {}", ep.source);
-                    self.code_changes += 1;
-                    self.commits += 1;
+                "code.evolve" => {
+                    let report = evolve_task(&self.work, Path::new(&ep.source))?;
+                    data = report.to_json();
+                    self.mutation_candidates += report.candidates_evaluated;
+                    self.mutations_committed += report.mutations_committed;
+                    self.commits += report.mutations_committed;
                 }
                 "ipc.request" => {
                     let payload = if data.is_empty() {

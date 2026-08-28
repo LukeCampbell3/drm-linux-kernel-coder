@@ -17,7 +17,9 @@ pub const ROOT: [&str; 3] = ["OBSERVE", "DERIVE", "COMMIT"];
 pub fn root_expansion(capability: &str) -> &'static [&'static str] {
     match capability {
         "fs.read" | "state.read" | "proc.observe" | "timer.observe" => &["OBSERVE"],
-        "http.request" | "web.selenium" | "code.patch" | "ipc.request" | "process.run" => &["DERIVE", "COMMIT", "OBSERVE"],
+        "http.request" | "web.selenium" | "code.evolve" | "ipc.request" | "process.run" => {
+            &["DERIVE", "COMMIT", "OBSERVE"]
+        }
         "transform.extract" | "transform.summarize" => &["DERIVE"],
         "fs.write" | "state.write" | "notify.send" => &["DERIVE", "COMMIT"],
         _ => &[],
@@ -32,7 +34,7 @@ pub const CAPABILITIES: [&str; 14] = [
     "timer.observe",
     "http.request",
     "web.selenium",
-    "code.patch",
+    "code.evolve",
     "ipc.request",
     "process.run",
     "transform.extract",

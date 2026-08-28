@@ -257,7 +257,7 @@ mkdir -p "$MNT/usr/local/share/doc/drmd"
 cp "$REPO_ROOT/README.md" "$MNT/usr/local/share/doc/drmd/README.md" 2>/dev/null || true
 cp "$REPO_ROOT/docs/ARCHITECTURE.md" "$MNT/usr/local/share/doc/drmd/ARCHITECTURE.md" 2>/dev/null || true
 cp "$REPO_ROOT/docs/SELENIUM_WEB.md" "$MNT/usr/local/share/doc/drmd/SELENIUM_WEB.md" 2>/dev/null || true
-cp "$REPO_ROOT/docs/GUARDED_CODE_CHANGES.md" "$MNT/usr/local/share/doc/drmd/GUARDED_CODE_CHANGES.md" 2>/dev/null || true
+cp "$REPO_ROOT/docs/RUNTIME_MUTATION.md" "$MNT/usr/local/share/doc/drmd/RUNTIME_MUTATION.md" 2>/dev/null || true
 cp "$REPO_ROOT/docs/reports/desktop-experiment.md" "$MNT/usr/local/share/doc/drmd/desktop-experiment.md" 2>/dev/null || true
 
 log "installing the BIOS boot sector (grub-install, run from the host -- see build-image.sh's comment on why)"

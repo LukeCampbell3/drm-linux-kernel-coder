@@ -17,7 +17,7 @@ pub mod servers;
 pub mod specialize;
 pub mod web;
 
-pub use code::CodeConfig;
+pub use code::{evolve_task, MutationReport};
 pub use executor::{make_fixtures, ExecError, LiveExecutor};
 pub use servers::{TcpFixtureServer, UnixFixtureServer};
 pub use specialize::SpecializationSet;

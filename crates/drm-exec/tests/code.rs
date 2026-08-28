@@ -1,80 +1,46 @@
 use std::path::PathBuf;
-use std::process::Command;
 
-use drm_exec::CodeConfig;
+use drm_exec::evolve_task;
 
-fn repo(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("drm-code-test-{name}-{}", std::process::id()));
+fn workspace(name: &str, source: &str, cases: &[(&str, &str, &str)]) -> PathBuf {
+    let root = std::env::temp_dir().join(format!("drm-evolve-test-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
-    std::fs::create_dir_all(root.join("src")).unwrap();
-    std::fs::write(root.join("src/lib.rs"), "pub fn value() -> u8 { 1 }\n").unwrap();
-    assert!(Command::new("git")
-        .args(["init", "-q"])
-        .current_dir(&root)
-        .status()
-        .unwrap()
-        .success());
-    assert!(Command::new("git")
-        .args(["add", "."])
-        .current_dir(&root)
-        .status()
-        .unwrap()
-        .success());
-    assert!(Command::new("git")
-        .args([
-            "-c",
-            "user.name=DRM Test",
-            "-c",
-            "user.email=drm@example.invalid",
-            "commit",
-            "-qm",
-            "fixture"
-        ])
-        .current_dir(&root)
-        .status()
-        .unwrap()
-        .success());
+    std::fs::create_dir_all(root.join("tasks")).unwrap();
+    std::fs::write(root.join("tasks/program.py"), source).unwrap();
+    let mut goal = String::from("source=tasks/program.py\nmax_candidates=256\ntimeout_ms=1000\n");
+    for (case_name, input, expected) in cases {
+        goal.push_str(&format!("case={case_name}|{}|{}\n", input.replace('\n', "\\n"), expected.replace('\n', "\\n")));
+    }
+    std::fs::write(root.join("goal.drm"), goal).unwrap();
     root
 }
 
-fn config(root: PathBuf, verifier: &str) -> CodeConfig {
-    CodeConfig {
-        root,
-        allowed_paths: vec![PathBuf::from("src")],
-        max_patch_bytes: 4096,
-        allow_delete: false,
-        verify_program: PathBuf::from(verifier),
-        verify_args: Vec::new(),
-    }
-}
-
-const PATCH: &[u8] = b"diff --git a/src/lib.rs b/src/lib.rs\n--- a/src/lib.rs\n+++ b/src/lib.rs\n@@ -1 +1 @@\n-pub fn value() -> u8 { 1 }\n+pub fn value() -> u8 { 2 }\n";
-
 #[test]
-fn verified_patch_is_committed_to_the_worktree() {
-    let root = repo("commit");
-    config(root.clone(), "/bin/true").apply(PATCH).unwrap();
-    assert!(std::fs::read_to_string(root.join("src/lib.rs")).unwrap().contains("{ 2 }"));
+fn repairs_boundary_behavior_from_executable_goal() {
+    let source = "value = int(input())\nprint('high' if value > 10 else 'low')\n";
+    let root = workspace("boundary", source, &[("below", "9\n", "low"), ("boundary", "10\n", "high"), ("above", "11\n", "high")]);
+    let report = evolve_task(&root, std::path::Path::new("goal.drm")).unwrap();
+    assert_eq!((report.initial_passed, report.final_passed, report.total_cases), (2, 3, 3));
+    assert_eq!(report.mutations_committed, 1);
+    assert!(std::fs::read_to_string(root.join("tasks/program.py")).unwrap().contains(">="));
     let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
-fn failed_verification_rolls_the_patch_back() {
-    let root = repo("rollback");
-    let error = config(root.clone(), "/bin/false").apply(PATCH).unwrap_err();
-    assert!(error.to_string().contains("patch rolled back"));
-    assert!(std::fs::read_to_string(root.join("src/lib.rs")).unwrap().contains("{ 1 }"));
+fn repairs_numeric_policy_and_quantifies_search() {
+    let source = "attempts = int(input())\nprint(min(attempts, 2))\n";
+    let root = workspace("retry", source, &[("one", "1\n", "1"), ("three", "3\n", "3"), ("five", "5\n", "3")]);
+    let report = evolve_task(&root, std::path::Path::new("goal.drm")).unwrap();
+    assert_eq!((report.initial_passed, report.final_passed), (1, 3));
+    assert!(report.candidates_evaluated > 0);
+    assert_eq!(report.mutations_committed, 1);
     let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
-fn paths_outside_the_allowlist_are_rejected() {
-    let root = repo("deny");
-    let patch = b"diff --git a/README.md b/README.md\n--- /dev/null\n+++ b/README.md\n@@ -0,0 +1 @@\n+unsafe\n";
-    assert!(config(root.clone(), "/bin/true")
-        .apply(patch)
-        .unwrap_err()
-        .to_string()
-        .contains("outside"));
+fn rejects_workspace_escape_without_git() {
+    let root = workspace("escape", "print(1)\n", &[("one", "", "1")]);
+    std::fs::write(root.join("goal.drm"), "source=../outside.py\ncase=x||1\n").unwrap();
+    assert!(evolve_task(&root, std::path::Path::new("goal.drm")).unwrap_err().to_string().contains("unsafe task path"));
     let _ = std::fs::remove_dir_all(root);
 }
