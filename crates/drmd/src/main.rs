@@ -26,6 +26,7 @@ mod bench;
 mod cli;
 mod client;
 mod fmt;
+mod model_frontend;
 mod protocol;
 mod registry_state;
 mod selftest;
@@ -50,6 +51,7 @@ Usage:\n  \
   drmd bench [--out DIR]\n  \
   drmd agent-bench [--out DIR]\n  \
   drmd suite-bench [--out DIR]\n  \
+  drmd assist --goal TEXT [--provider glm|qwen]\n  \
   drmd simulate <server|desktop> [--out DIR]\n  \
   drmd serve [--socket PATH] [--work DIR] [--state DIR] [--consolidate-ms N]\n  \
   drmd submit --task NAME --ops cap1,cap2,... [--app ID] [--workload ID] [--host ID] [--user ID] [--socket PATH] [--source PATH] [--output PATH] [--url PATH] [--ancestral]\n  \
@@ -99,6 +101,7 @@ fn main() -> ExitCode {
         "bench" => cmd_bench(rest),
         "agent-bench" => cmd_agent_bench(rest),
         "suite-bench" => cmd_suite_bench(rest),
+        "assist" => cmd_assist(rest),
         "simulate" => cmd_simulate(rest),
         "serve" => cmd_serve(rest),
         "submit" => cmd_submit(rest),
@@ -116,6 +119,25 @@ fn main() -> ExitCode {
             print_help();
             ExitCode::FAILURE
         }
+    }
+}
+
+fn cmd_assist(args: &[String]) -> ExitCode {
+    let parsed = ParsedArgs::parse(args);
+    let Some(goal) = parsed.get("goal") else {
+        eprintln!("drmd: assist requires --goal TEXT");
+        return ExitCode::FAILURE;
+    };
+    let provider = parsed.get("provider").unwrap_or("glm");
+    match model_frontend::assist(goal, provider) {
+        Ok(result) => {
+            println!("provider={} decision={} family={} capability={} confidence_milli={} latency_ms={}",
+                result.provider, result.plan.decision, result.plan.family, result.plan.capability,
+                result.plan.confidence_milli, result.elapsed.as_millis());
+            println!("proposal_only=true certified_execution_required=true");
+            ExitCode::SUCCESS
+        }
+        Err(error) => { eprintln!("drmd: assist failed: {error}"); ExitCode::FAILURE }
     }
 }
 

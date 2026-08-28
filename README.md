@@ -53,6 +53,8 @@ DRM instances can adapt task programs during execution through `code.evolve`: ru
 
 For web and application suites, `task.watch` learns from successful user/application traces in shadow mode, while `app.execute` runs only independently supported, certified workflows through operator-allowlisted adapters. `drmd suite-bench` measures action and duration efficiency over successive observations without exposing live applications to exploratory mutations. See [`docs/OBSERVE_FIRST_APPS.md`](docs/OBSERVE_FIRST_APPS.md).
 
+`drmd assist` adds a GLM-5.3-Flash user-agent frontend for specific natural-language goals, with Qwen3.8-Flash as a comparable provider. Models can only propose bounded task manifests; DRM retains certification, application allowlists, and execution authority. See [`docs/MODEL_FRONTEND.md`](docs/MODEL_FRONTEND.md).
+
 `serve` uses the two-tier `HybridPlanner` (a fast-forming, capped
 *provisional* vocabulary alongside the conservative *permanent* one) with
 deferred background consolidation, so submitting an episode is never

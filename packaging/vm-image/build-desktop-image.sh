@@ -142,6 +142,7 @@ ROOT_UUID="$(blkid -s UUID -o value "$PART")"
 log "installing drmd binary (no system-level unit -- this image runs drmd as a per-user systemd --user service)"
 install -D -m 755 "$BINARY" "$MNT/usr/local/bin/drmd"
 install -D -m 755 "$REPO_ROOT/packaging/selenium/selenium_bridge.py" "$MNT/usr/local/lib/drmd/selenium_bridge.py"
+install -D -m 755 "$REPO_ROOT/packaging/models/openai_compatible_frontend.py" "$MNT/usr/local/lib/drmd/openai_compatible_frontend.py"
 
 log "writing base system configuration"
 echo "$HOSTNAME_VALUE" > "$MNT/etc/hostname"
