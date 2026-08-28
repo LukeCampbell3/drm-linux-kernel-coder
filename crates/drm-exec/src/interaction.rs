@@ -72,7 +72,9 @@ impl WatchLearner {
         self.metrics.watched_tasks += 1;
         self.metrics.observed_actions += trace.actions.len();
         self.metrics.observed_interventions += trace.interventions;
-        if trace.success { self.metrics.successful_tasks += 1; }
+        if trace.success {
+            self.metrics.successful_tasks += 1;
+        }
         let family = trace.family.clone();
         self.traces.entry(family.clone()).or_default().push(trace);
         self.reconsider(&family)?;
@@ -81,17 +83,24 @@ impl WatchLearner {
     }
 
     pub fn execute_certified(&self, family: &str, apps: &AppConfig) -> Result<(usize, u64), ExecError> {
-        let policy = self.certified.get(family).ok_or_else(|| ExecError::AppDenied(format!("task family `{family}` has no certified workflow")))?;
-        for action in &policy.actions { apps.execute(action)?; }
+        let policy = self
+            .certified
+            .get(family)
+            .ok_or_else(|| ExecError::AppDenied(format!("task family `{family}` has no certified workflow")))?;
+        for action in &policy.actions {
+            apps.execute(action)?;
+        }
         Ok((policy.actions.len(), policy.median_duration_ms))
     }
 
-    pub fn is_certified(&self, family: &str) -> bool { self.certified.contains_key(family) }
+    pub fn is_certified(&self, family: &str) -> bool {
+        self.certified.contains_key(family)
+    }
 
     pub fn certified_stats(&self, family: &str) -> Option<(usize, usize, u64)> {
-        self.certified.get(family).map(|policy| {
-            (policy.actions.len(), policy.independent_successes, policy.median_duration_ms)
-        })
+        self.certified
+            .get(family)
+            .map(|policy| (policy.actions.len(), policy.independent_successes, policy.median_duration_ms))
     }
 
     fn reconsider(&mut self, family: &str) -> Result<(), ExecError> {
@@ -101,24 +110,37 @@ impl WatchLearner {
             candidates.entry(trace.actions.clone()).or_default().push(trace);
         }
         self.metrics.shadow_evaluations += candidates.len();
-        let best = candidates.into_iter().filter_map(|(actions, supporting)| {
-            let independent: HashSet<&str> = supporting.iter().map(|trace| trace.run_id.as_str()).collect();
-            if independent.len() < self.min_independent_successes { return None; }
-            let failures = traces.iter().filter(|trace| !trace.success && trace.actions == actions).count();
-            let success_rate = supporting.len() as f64 / (supporting.len() + failures) as f64;
-            if success_rate < 0.9 { return None; }
-            let mut durations: Vec<u64> = supporting.iter().map(|trace| trace.duration_ms).collect();
-            durations.sort_unstable();
-            Some((actions, independent.len(), durations[durations.len() / 2]))
-        }).min_by_key(|(actions, _, duration)| (actions.len(), *duration));
+        let best = candidates
+            .into_iter()
+            .filter_map(|(actions, supporting)| {
+                let independent: HashSet<&str> = supporting.iter().map(|trace| trace.run_id.as_str()).collect();
+                if independent.len() < self.min_independent_successes {
+                    return None;
+                }
+                let failures = traces.iter().filter(|trace| !trace.success && trace.actions == actions).count();
+                let success_rate = supporting.len() as f64 / (supporting.len() + failures) as f64;
+                if success_rate < 0.9 {
+                    return None;
+                }
+                let mut durations: Vec<u64> = supporting.iter().map(|trace| trace.duration_ms).collect();
+                durations.sort_unstable();
+                Some((actions, independent.len(), durations[durations.len() / 2]))
+            })
+            .min_by_key(|(actions, _, duration)| (actions.len(), *duration));
 
         if let Some((actions, independent_successes, median_duration_ms)) = best {
             let should_replace = self.certified.get(family).map_or(true, |old| {
-                actions.len() < old.actions.len()
-                    || (actions.len() == old.actions.len() && median_duration_ms < old.median_duration_ms)
+                actions.len() < old.actions.len() || (actions.len() == old.actions.len() && median_duration_ms < old.median_duration_ms)
             });
             if should_replace {
-                self.certified.insert(family.to_string(), CertifiedPolicy { actions, independent_successes, median_duration_ms });
+                self.certified.insert(
+                    family.to_string(),
+                    CertifiedPolicy {
+                        actions,
+                        independent_successes,
+                        median_duration_ms,
+                    },
+                );
                 self.metrics.certified_policies += 1;
             }
         }
@@ -137,7 +159,19 @@ impl WatchLearner {
         let mean_duration = traces.iter().map(|trace| trace.duration_ms).sum::<u64>() as f64 / traces.len() as f64;
         let mean_interventions = traces.iter().map(|trace| trace.interventions).sum::<usize>() as f64 / traces.len() as f64;
         let certified_actions = self.certified.get(family).map_or(0, |policy| policy.actions.len());
-        writeln!(output, "{},{},{:.4},{:.3},{:.3},{:.3},{},{},{}", self.metrics.watched_tasks, family, successes as f64 / traces.len() as f64, mean_actions, mean_duration, mean_interventions, self.metrics.shadow_evaluations, self.certified.contains_key(family), certified_actions)?;
+        writeln!(
+            output,
+            "{},{},{:.4},{:.3},{:.3},{:.3},{},{},{}",
+            self.metrics.watched_tasks,
+            family,
+            successes as f64 / traces.len() as f64,
+            mean_actions,
+            mean_duration,
+            mean_interventions,
+            self.metrics.shadow_evaluations,
+            self.certified.contains_key(family),
+            certified_actions
+        )?;
         Ok(())
     }
 
@@ -167,34 +201,64 @@ impl AppConfig {
             .filter(|value| !value.is_empty())
             .map(str::to_string)
             .collect();
-        Some(Self { adapter_dir, allowed_applications, allow_risky: std::env::var("DRMD_APP_ALLOW_RISKY").as_deref() == Ok("1") })
+        Some(Self {
+            adapter_dir,
+            allowed_applications,
+            allow_risky: std::env::var("DRMD_APP_ALLOW_RISKY").as_deref() == Ok("1"),
+        })
     }
 
     fn execute(&self, action: &Action) -> Result<(), ExecError> {
         if !self.allowed_applications.contains(&action.application) {
-            return Err(ExecError::AppDenied(format!("application `{}` is not allowlisted", action.application)));
+            return Err(ExecError::AppDenied(format!(
+                "application `{}` is not allowlisted",
+                action.application
+            )));
         }
         if !self.allow_risky && matches!(action.verb.as_str(), "delete" | "purchase" | "send" | "submit" | "authenticate") {
-            return Err(ExecError::AppDenied(format!("risky action `{}` requires explicit authorization", action.verb)));
+            return Err(ExecError::AppDenied(format!(
+                "risky action `{}` requires explicit authorization",
+                action.verb
+            )));
         }
         let adapter = self.adapter_dir.join(&action.application);
         if !adapter.is_file() || adapter.symlink_metadata()?.file_type().is_symlink() {
             return Err(ExecError::AppDenied(format!("invalid adapter for `{}`", action.application)));
         }
         let status = Command::new(adapter).args([&action.verb, &action.target, &action.value]).status()?;
-        if status.success() { Ok(()) } else { Err(ExecError::AppFailed(format!("{} adapter rejected {}", action.application, action.verb))) }
+        if status.success() {
+            Ok(())
+        } else {
+            Err(ExecError::AppFailed(format!(
+                "{} adapter rejected {}",
+                action.application, action.verb
+            )))
+        }
     }
 }
 
 fn parse_trace(text: &str) -> Result<Trace, ExecError> {
     let mut values = BTreeMap::new();
     let mut actions = Vec::new();
-    for line in text.lines().map(str::trim).filter(|line| !line.is_empty() && !line.starts_with('#')) {
-        let (key, value) = line.split_once('=').ok_or_else(|| ExecError::AppDenied(format!("invalid trace line `{line}`")))?;
+    for line in text
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+    {
+        let (key, value) = line
+            .split_once('=')
+            .ok_or_else(|| ExecError::AppDenied(format!("invalid trace line `{line}`")))?;
         if key == "action" {
             let fields: Vec<&str> = value.splitn(4, '|').collect();
-            if fields.len() != 4 { return Err(ExecError::AppDenied("action requires application|verb|target|value".into())); }
-            actions.push(Action { application: fields[0].into(), verb: fields[1].into(), target: fields[2].into(), value: fields[3].into() });
+            if fields.len() != 4 {
+                return Err(ExecError::AppDenied("action requires application|verb|target|value".into()));
+            }
+            actions.push(Action {
+                application: fields[0].into(),
+                verb: fields[1].into(),
+                target: fields[2].into(),
+                value: fields[3].into(),
+            });
         } else {
             values.insert(key, value);
         }
@@ -211,8 +275,12 @@ fn parse_trace(text: &str) -> Result<Trace, ExecError> {
         run_id: required(&values, "run_id")?.into(),
         family: required(&values, "family")?.into(),
         success: required(&values, "success")? == "true",
-        duration_ms: required(&values, "duration_ms")?.parse().map_err(|_| ExecError::AppDenied("invalid duration".into()))?,
-        interventions: required(&values, "interventions")?.parse().map_err(|_| ExecError::AppDenied("invalid interventions".into()))?,
+        duration_ms: required(&values, "duration_ms")?
+            .parse()
+            .map_err(|_| ExecError::AppDenied("invalid duration".into()))?,
+        interventions: required(&values, "interventions")?
+            .parse()
+            .map_err(|_| ExecError::AppDenied("invalid interventions".into()))?,
         actions,
     };
     if trace.run_id.len() > 256 || trace.family.len() > 256 || trace.duration_ms > 86_400_000 || trace.interventions > 10_000 {
@@ -222,11 +290,18 @@ fn parse_trace(text: &str) -> Result<Trace, ExecError> {
 }
 
 fn required<'a>(values: &BTreeMap<&'a str, &'a str>, key: &str) -> Result<&'a str, ExecError> {
-    values.get(key).copied().ok_or_else(|| ExecError::AppDenied(format!("trace requires `{key}`")))
+    values
+        .get(key)
+        .copied()
+        .ok_or_else(|| ExecError::AppDenied(format!("trace requires `{key}`")))
 }
 
 fn confined(work: &Path, relative: &Path) -> Result<PathBuf, ExecError> {
-    if relative.is_absolute() || relative.components().any(|part| matches!(part, Component::ParentDir | Component::RootDir | Component::Prefix(_))) {
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|part| matches!(part, Component::ParentDir | Component::RootDir | Component::Prefix(_)))
+    {
         return Err(ExecError::AppDenied(format!("unsafe trace path `{}`", relative.display())));
     }
     let path = work.join(relative);

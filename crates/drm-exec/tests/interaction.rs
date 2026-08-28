@@ -12,10 +12,11 @@ fn root(name: &str) -> PathBuf {
 
 fn trace(path: &Path, run: usize, actions: &[&str], duration: u64, interventions: usize) -> PathBuf {
     let relative = PathBuf::from(format!("traces/run-{run}.trace"));
-    let mut value = format!(
-        "run_id=run-{run}\nfamily=research_to_notes\nsuccess=true\nduration_ms={duration}\ninterventions={interventions}\n"
-    );
-    for action in actions { value.push_str(&format!("action={action}\n")); }
+    let mut value =
+        format!("run_id=run-{run}\nfamily=research_to_notes\nsuccess=true\nduration_ms={duration}\ninterventions={interventions}\n");
+    for action in actions {
+        value.push_str(&format!("action={action}\n"));
+    }
     std::fs::write(path.join(&relative), value).unwrap();
     relative
 }
@@ -24,8 +25,16 @@ fn adapter(path: &Path, application: &str, log: &Path) {
     let adapters = path.join("adapters");
     std::fs::create_dir_all(&adapters).unwrap();
     let executable = adapters.join(application);
-    std::fs::write(&executable, format!("#!/bin/sh\nprintf '%s|%s|%s|%s\\n' '{application}' \"$1\" \"$2\" \"$3\" >> '{}'\n", log.display())).unwrap();
-    #[cfg(unix)] {
+    std::fs::write(
+        &executable,
+        format!(
+            "#!/bin/sh\nprintf '%s|%s|%s|%s\\n' '{application}' \"$1\" \"$2\" \"$3\" >> '{}'\n",
+            log.display()
+        ),
+    )
+    .unwrap();
+    #[cfg(unix)]
+    {
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(executable, std::fs::Permissions::from_mode(0o755)).unwrap();
     }

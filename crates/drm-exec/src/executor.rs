@@ -284,7 +284,10 @@ impl LiveExecutor {
                     let (actions, expected_ms) = self.watch.execute_certified(&ep.source, apps)?;
                     self.app_tasks += 1;
                     self.app_actions += actions;
-                    data = format!("{{\"family\":\"{}\",\"actions\":{actions},\"learned_median_ms\":{expected_ms}}}", ep.source);
+                    data = format!(
+                        "{{\"family\":\"{}\",\"actions\":{actions},\"learned_median_ms\":{expected_ms}}}",
+                        ep.source
+                    );
                 }
                 "ipc.request" => {
                     let payload = if data.is_empty() {

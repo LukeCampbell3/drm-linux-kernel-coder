@@ -124,9 +124,24 @@ fn cmd_suite_bench(args: &[String]) -> ExitCode {
     let out = parsed.path_or("out", "results/suite-bench");
     match suite_bench::run(&out) {
         Ok(report) => {
-            println!("families={} observations={} certified={} actions={}->{} duration_ms={}->{} interventions={} shadow_evaluations={}", report.families, report.observations, report.certified, report.initial_actions, report.certified_actions, report.initial_ms, report.certified_ms, report.interventions_observed, report.shadow_evaluations);
+            println!(
+                "families={} observations={} certified={} actions={}->{} duration_ms={}->{} interventions={} shadow_evaluations={}",
+                report.families,
+                report.observations,
+                report.certified,
+                report.initial_actions,
+                report.certified_actions,
+                report.initial_ms,
+                report.certified_ms,
+                report.interventions_observed,
+                report.shadow_evaluations
+            );
             println!("report written to {}", out.display());
-            if report.certified == report.families { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+            if report.certified == report.families {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
         }
         Err(error) => {
             eprintln!("drmd: suite-bench failed: {error}");
