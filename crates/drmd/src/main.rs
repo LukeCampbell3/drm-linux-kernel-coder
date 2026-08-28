@@ -131,13 +131,22 @@ fn cmd_assist(args: &[String]) -> ExitCode {
     let provider = parsed.get("provider").unwrap_or("glm");
     match model_frontend::assist(goal, provider) {
         Ok(result) => {
-            println!("provider={} decision={} family={} capability={} confidence_milli={} latency_ms={}",
-                result.provider, result.plan.decision, result.plan.family, result.plan.capability,
-                result.plan.confidence_milli, result.elapsed.as_millis());
+            println!(
+                "provider={} decision={} family={} capability={} confidence_milli={} latency_ms={}",
+                result.provider,
+                result.plan.decision,
+                result.plan.family,
+                result.plan.capability,
+                result.plan.confidence_milli,
+                result.elapsed.as_millis()
+            );
             println!("proposal_only=true certified_execution_required=true");
             ExitCode::SUCCESS
         }
-        Err(error) => { eprintln!("drmd: assist failed: {error}"); ExitCode::FAILURE }
+        Err(error) => {
+            eprintln!("drmd: assist failed: {error}");
+            ExitCode::FAILURE
+        }
     }
 }
 

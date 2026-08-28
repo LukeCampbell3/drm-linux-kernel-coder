@@ -35,7 +35,11 @@ fn unsafe_model_plan_is_rejected() {
     let dir = std::env::temp_dir().join(format!("drmd-model-reject-{}", std::process::id()));
     fs::create_dir_all(&dir).unwrap();
     let adapter = dir.join("adapter.sh");
-    fs::write(&adapter, "#!/bin/sh\nprintf 'decision=execute\\nfamily=x\\ncapability=web.selenium\\nconfidence_milli=999\\n'\n").unwrap();
+    fs::write(
+        &adapter,
+        "#!/bin/sh\nprintf 'decision=execute\\nfamily=x\\ncapability=web.selenium\\nconfidence_milli=999\\n'\n",
+    )
+    .unwrap();
     let mut permissions = fs::metadata(&adapter).unwrap().permissions();
     permissions.set_mode(0o700);
     fs::set_permissions(&adapter, permissions).unwrap();
