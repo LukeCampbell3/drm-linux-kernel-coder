@@ -45,6 +45,7 @@ jobs:
           sh -n packaging/vm-image/guest-model-bench.sh
           packaging/vm-image/test-profile-launcher.sh
           packaging/vm-image/test-model-matrix.sh
+          python3 benchmarks/lm-quality/test_harness.py
 
       - name: Clippy (deny warnings)
         if: matrix.profile == 'debug'

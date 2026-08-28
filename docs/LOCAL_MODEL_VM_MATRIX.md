@@ -47,6 +47,8 @@ Every model/environment combination must report:
 - escalation count and marginal completion gain from escalation;
 - bytes and milliseconds per verified completion.
 
+The frozen quality suite in `benchmarks/lm-quality` compares DRM students with Qwen3.5-0.8B, LFM2.5-1.2B, Qwen2.5-Coder-1.5B/7B, SmolLM3-3B, and Qwen3-4B/8B baselines. It scores strict manifest validity, task decision and capability accuracy, unsafe execution attempts, and latency. Resource measurements from `drm-model-bench` must be joined by model digest and VM profile before DRM selects a winner.
+
 Run at least three independent repetitions per cell. Freeze prompts and expected outcomes before comparison. Mark missing hardware, weights, or runtime support as `NOT_RUN`; never substitute estimated throughput for observed throughput.
 
 ## DRM selection rule
