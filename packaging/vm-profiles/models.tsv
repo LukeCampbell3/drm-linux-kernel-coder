@@ -1,0 +1,15 @@
+id	family	role	total_params_b	active_params_b	quantization	minimum_model_mb	preferred_profile	status
+student-0.6b-q4	student	intent	0.6	0.6	q4	700	8gb-cpu	candidate
+student-1.7b-q4	student	intent,tools	1.7	1.7	q4	1400	8gb-cpu	candidate
+student-4b-q4	student	general,coding	4.0	4.0	q4	3000	8gb-cpu	candidate
+student-8b-q4	student	general,coding	8.0	8.0	q4	5600	12gb-cpu	candidate
+student-14b-q4	student	reasoning,coding	14.0	14.0	q4	9400	16gb-cpu	candidate
+qwen3.5-0.8b-q4	qwen	intent,tools	0.8	0.8	q4	850	8gb-cpu	baseline
+lfm2.5-1.2b-q4	liquid	intent,tools	1.2	1.2	q4	1100	8gb-cpu	baseline
+qwen2.5-coder-1.5b-q4	qwen	coding	1.5	1.5	q4	1300	8gb-cpu	baseline
+smollm3-3b-q4	smollm	general,reasoning	3.0	3.0	q4	2300	8gb-cpu	baseline
+qwen3-4b-q4	qwen	general,reasoning	4.0	4.0	q4	3000	8gb-cpu	baseline
+qwen2.5-coder-7b-q4	qwen	coding	7.0	7.0	q4	5000	12gb-cpu	baseline
+qwen3-8b-q4	qwen	general,reasoning	8.0	8.0	q4	5600	12gb-cpu	baseline
+qwen3-coder-next-q4	qwen	coding,agentic	80.0	3.0	q4	44000	unsupported	too_large_for_target
+glm-5.3-flash-q4	glm	teacher,agentic	320.0	18.0	q4	176000	unsupported	offline_teacher_only

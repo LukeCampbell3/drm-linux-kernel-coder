@@ -1,0 +1,13 @@
+profile,ram_mb,vcpus,model_budget_mb,candidate,declared_minimum_model_mb,feasible_by_weight_budget,execution_measurement
+8gb-cpu,8192,2,4600,student-0.6b-q4,700,true,NOT_RUN
+8gb-cpu,8192,2,4600,student-1.7b-q4,1400,true,NOT_RUN
+8gb-cpu,8192,2,4600,student-4b-q4,3000,true,NOT_RUN
+8gb-cpu,8192,2,4600,student-8b-q4,5600,false,NOT_RUN
+12gb-cpu,12288,4,7600,student-4b-q4,3000,true,NOT_RUN
+12gb-cpu,12288,4,7600,student-8b-q4,5600,true,NOT_RUN
+12gb-cpu,12288,4,7600,student-14b-q4,9400,false,NOT_RUN
+16gb-cpu,16384,6,10600,student-8b-q4,5600,true,NOT_RUN
+16gb-cpu,16384,6,10600,student-14b-q4,9400,true,NOT_RUN
+24gb-cpu,24576,8,17000,student-14b-q4,9400,true,NOT_RUN
+24gb-cpu,24576,8,17000,qwen3-coder-next-q4,44000,false,NOT_RUN
+24gb-cpu,24576,8,17000,glm-5.3-flash-q4,176000,false,NOT_RUN

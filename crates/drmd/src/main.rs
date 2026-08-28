@@ -3,6 +3,8 @@
 //! Subcommands:
 //! - `selftest`: fast in-memory invariant check (no I/O).
 //! - `bench [--out DIR]`: run the frozen 99-episode regression workload.
+//! - `agent-bench [--out DIR]`: run executable goal-driven program-repair tasks.
+//! - `suite-bench [--out DIR]`: measure observe-first application workflow learning.
 //! - `simulate <server|desktop> [--out DIR]`: run the comparative
 //!   benchmark suite (five baselines + three DRM configurations) against
 //!   a deterministic synthetic workload and write CSVs + a summary.
@@ -19,15 +21,18 @@
 //! - `explain <optimization-id>`: detail on one specialization.
 //! - `reset <scope>`: `all` or `application:<id>`.
 
+mod agent_bench;
 mod bench;
 mod cli;
 mod client;
 mod fmt;
+mod model_frontend;
 mod protocol;
 mod registry_state;
 mod selftest;
 mod serve;
 mod simulate;
+mod suite_bench;
 mod workload;
 
 use std::path::PathBuf;
@@ -44,6 +49,9 @@ fn print_help() {
 Usage:\n  \
   drmd selftest\n  \
   drmd bench [--out DIR]\n  \
+  drmd agent-bench [--out DIR]\n  \
+  drmd suite-bench [--out DIR]\n  \
+  drmd assist --goal TEXT [--provider glm|qwen]\n  \
   drmd simulate <server|desktop> [--out DIR]\n  \
   drmd serve [--socket PATH] [--work DIR] [--state DIR] [--consolidate-ms N]\n  \
   drmd submit --task NAME --ops cap1,cap2,... [--app ID] [--workload ID] [--host ID] [--user ID] [--socket PATH] [--source PATH] [--output PATH] [--url PATH] [--ancestral]\n  \
@@ -91,6 +99,9 @@ fn main() -> ExitCode {
             }
         }
         "bench" => cmd_bench(rest),
+        "agent-bench" => cmd_agent_bench(rest),
+        "suite-bench" => cmd_suite_bench(rest),
+        "assist" => cmd_assist(rest),
         "simulate" => cmd_simulate(rest),
         "serve" => cmd_serve(rest),
         "submit" => cmd_submit(rest),
@@ -106,6 +117,94 @@ fn main() -> ExitCode {
         other => {
             eprintln!("drmd: unknown command `{other}`\n");
             print_help();
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_assist(args: &[String]) -> ExitCode {
+    let parsed = ParsedArgs::parse(args);
+    let Some(goal) = parsed.get("goal") else {
+        eprintln!("drmd: assist requires --goal TEXT");
+        return ExitCode::FAILURE;
+    };
+    let provider = parsed.get("provider").unwrap_or("glm");
+    match model_frontend::assist(goal, provider) {
+        Ok(result) => {
+            println!(
+                "provider={} decision={} family={} capability={} confidence_milli={} latency_ms={}",
+                result.provider,
+                result.plan.decision,
+                result.plan.family,
+                result.plan.capability,
+                result.plan.confidence_milli,
+                result.elapsed.as_millis()
+            );
+            println!("proposal_only=true certified_execution_required=true");
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("drmd: assist failed: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_suite_bench(args: &[String]) -> ExitCode {
+    let parsed = ParsedArgs::parse(args);
+    let out = parsed.path_or("out", "results/suite-bench");
+    match suite_bench::run(&out) {
+        Ok(report) => {
+            println!(
+                "families={} observations={} certified={} actions={}->{} duration_ms={}->{} interventions={} shadow_evaluations={}",
+                report.families,
+                report.observations,
+                report.certified,
+                report.initial_actions,
+                report.certified_actions,
+                report.initial_ms,
+                report.certified_ms,
+                report.interventions_observed,
+                report.shadow_evaluations
+            );
+            println!("report written to {}", out.display());
+            if report.certified == report.families {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
+        Err(error) => {
+            eprintln!("drmd: suite-bench failed: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_agent_bench(args: &[String]) -> ExitCode {
+    let parsed = ParsedArgs::parse(args);
+    let out = parsed.path_or("out", "results/agent-bench");
+    match agent_bench::run(&out) {
+        Ok(report) => {
+            println!(
+                "tasks={} static={}/{} evolved={}/{} candidates={} committed={}",
+                report.tasks,
+                report.initial_passed,
+                report.total_cases,
+                report.final_passed,
+                report.total_cases,
+                report.candidates,
+                report.committed
+            );
+            println!("report written to {}", out.display());
+            if report.final_passed == report.total_cases {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
+        Err(error) => {
+            eprintln!("drmd: agent-bench failed: {error}");
             ExitCode::FAILURE
         }
     }

@@ -16,8 +16,11 @@ use std::time::{Duration, Instant};
 
 use drm_core::{root_expansion, Episode};
 
+use crate::code::evolve_task;
+use crate::interaction::{AppConfig, WatchLearner};
 use crate::servers::{TcpFixtureServer, UnixFixtureServer};
 use crate::specialize::SpecializationSet;
+use crate::web::WebConfig;
 
 #[derive(Debug)]
 pub enum ExecError {
@@ -25,6 +28,11 @@ pub enum ExecError {
     UnknownCapability(String),
     ChildFailed(String),
     VerificationFailed(String),
+    WebDenied(String),
+    WebBridge(String),
+    CodeDenied(String),
+    AppDenied(String),
+    AppFailed(String),
 }
 
 impl std::fmt::Display for ExecError {
@@ -34,6 +42,11 @@ impl std::fmt::Display for ExecError {
             ExecError::UnknownCapability(c) => write!(f, "unknown capability: {c}"),
             ExecError::ChildFailed(c) => write!(f, "child process failed: {c}"),
             ExecError::VerificationFailed(p) => write!(f, "output verification failed for {p}"),
+            ExecError::WebDenied(reason) => write!(f, "web access denied: {reason}"),
+            ExecError::WebBridge(reason) => write!(f, "Selenium bridge error: {reason}"),
+            ExecError::CodeDenied(reason) => write!(f, "code change denied: {reason}"),
+            ExecError::AppDenied(reason) => write!(f, "application action denied: {reason}"),
+            ExecError::AppFailed(reason) => write!(f, "application action failed: {reason}"),
         }
     }
 }
@@ -56,6 +69,13 @@ pub struct LiveExecutor {
     pub tcp_requests: usize,
     pub ipc_requests: usize,
     pub timer_events: usize,
+    pub web_requests: usize,
+    pub mutation_candidates: usize,
+    pub mutations_committed: usize,
+    pub watched_tasks: usize,
+    pub shadow_evaluations: usize,
+    pub app_tasks: usize,
+    pub app_actions: usize,
     pub root_counts: HashMap<String, usize>,
     /// Opt-in bridge to `drm-opt`'s specialization lifecycle (see
     /// `crate::specialize` module docs). `None` (the default from
@@ -74,6 +94,10 @@ pub struct LiveExecutor {
     /// most recent [`LiveExecutor::execute`] call, in the order they were
     /// used. Cleared at the start of every call.
     pub optimizations_used: Vec<String>,
+    /// Selenium access is disabled unless configured explicitly.
+    pub web: Option<WebConfig>,
+    pub watch: WatchLearner,
+    pub apps: Option<AppConfig>,
 }
 
 impl LiveExecutor {
@@ -92,6 +116,7 @@ impl LiveExecutor {
         let n = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let sock_path = std::env::temp_dir().join(format!("drmd-{}-{n}.sock", std::process::id()));
         let unix = UnixFixtureServer::start(&sock_path)?;
+        let watch = WatchLearner::new(work.join("watch-state"))?;
         Ok(Self {
             work,
             tcp,
@@ -102,11 +127,21 @@ impl LiveExecutor {
             tcp_requests: 0,
             ipc_requests: 0,
             timer_events: 0,
+            web_requests: 0,
+            mutation_candidates: 0,
+            mutations_committed: 0,
+            watched_tasks: 0,
+            shadow_evaluations: 0,
+            app_tasks: 0,
+            app_actions: 0,
             root_counts: HashMap::new(),
             specializations: None,
             reads_avoided: 0,
             transforms_memoized: 0,
             optimizations_used: Vec::new(),
+            web: WebConfig::from_env(),
+            watch,
+            apps: AppConfig::from_env(),
         })
     }
 
@@ -116,6 +151,16 @@ impl LiveExecutor {
     /// exactly as it always has.
     pub fn with_specialization(mut self, specializations: SpecializationSet) -> Self {
         self.specializations = Some(specializations);
+        self
+    }
+
+    pub fn with_web(mut self, config: WebConfig) -> Self {
+        self.web = Some(config);
+        self
+    }
+
+    pub fn with_apps(mut self, config: AppConfig) -> Self {
+        self.apps = Some(config);
         self
     }
 
@@ -211,6 +256,38 @@ impl LiveExecutor {
                 "http.request" => {
                     data = self.tcp.get(&ep.url_path)?;
                     self.tcp_requests += 1;
+                }
+                "web.selenium" => {
+                    let web = self
+                        .web
+                        .as_ref()
+                        .ok_or_else(|| ExecError::WebDenied("set DRMD_WEB_ALLOWED_HOSTS to enable Selenium".into()))?;
+                    data = web.fetch(&ep.url_path, &ep.ctx.application_id)?;
+                    self.web_requests += 1;
+                }
+                "code.evolve" => {
+                    let report = evolve_task(&self.work, Path::new(&ep.source))?;
+                    data = report.to_json();
+                    self.mutation_candidates += report.candidates_evaluated;
+                    self.mutations_committed += report.mutations_committed;
+                    self.commits += report.mutations_committed;
+                }
+                "task.watch" => {
+                    data = self.watch.observe_file(&self.work, Path::new(&ep.source))?;
+                    self.watched_tasks = self.watch.metrics.watched_tasks;
+                    self.shadow_evaluations = self.watch.metrics.shadow_evaluations;
+                }
+                "app.execute" => {
+                    let apps = self.apps.as_ref().ok_or_else(|| {
+                        ExecError::AppDenied("set DRMD_APP_ADAPTER_DIR and DRMD_APP_ALLOWED to enable application actions".into())
+                    })?;
+                    let (actions, expected_ms) = self.watch.execute_certified(&ep.source, apps)?;
+                    self.app_tasks += 1;
+                    self.app_actions += actions;
+                    data = format!(
+                        "{{\"family\":\"{}\",\"actions\":{actions},\"learned_median_ms\":{expected_ms}}}",
+                        ep.source
+                    );
                 }
                 "ipc.request" => {
                     let payload = if data.is_empty() {

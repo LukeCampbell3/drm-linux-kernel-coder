@@ -24,6 +24,7 @@ Type=simple
 ExecStart=/usr/local/bin/drmd serve --socket %t/drmd.sock --work %h/.local/share/drmd --state %h/.local/share/drmd/state
 Restart=on-failure
 RestartSec=2s
+Environment=DRMD_WEB_ALLOWED_HOSTS=*
 
 # User-manager-scoped sandboxing (the directives system units use --
 # DynamicUser, CapabilityBoundingSet, etc. -- are meaningless or

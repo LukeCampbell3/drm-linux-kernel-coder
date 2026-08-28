@@ -60,6 +60,17 @@ crates/
   codebase means an atomic write-then-rename, an appended state file, or
   an appended notification log entry -- a real durable effect on the
   local machine, never simulated.
+- `web`: validates per-deployment host policy and invokes the one-shot
+  Selenium bridge for the opt-in `web.selenium` capability. Fresh browser
+  sessions prevent cookie/local-storage transfer between applications.
+- `code`: provides the `code.evolve` developmental execution loop. It scores
+  the live task program against executable goals, derives bounded mutations,
+  atomically retains strict improvements, restores rejected candidates, and
+  reports the complete mutation/search trajectory without using Git.
+- `interaction`: separates observation, shadow selection, certification, and
+  live application execution. Successful traces teach shorter/faster workflows;
+  only independently supported policies can reach allowlisted application
+  adapters, so exploratory mutations never run against the user's live suite.
 - `servers`: the in-process loopback fixture servers backing
   `http.request`/`ipc.request`, so those capabilities have a real socket
   round-trip to perform without requiring external network access.
