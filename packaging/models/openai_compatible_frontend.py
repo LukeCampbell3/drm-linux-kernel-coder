@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""OpenAI-compatible intent adapter for GLM-5.3-Flash and Qwen3.8-Flash."""
+"""Loopback-only adapter for locally served GLM and Qwen checkpoints."""
 import argparse
 import json
-import os
 import sys
 import urllib.request
+from urllib.parse import urlparse
 
 PROVIDERS = {
-    "glm": ("ZAI_API_KEY", "https://api.z.ai/api/paas/v4/chat/completions", "glm-5.3-flash"),
-    "qwen": ("DASHSCOPE_API_KEY", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions", "qwen3.8-flash"),
+    "glm": ("http://127.0.0.1:8000/v1/chat/completions", "zai-org/GLM-5.3-Flash"),
+    "qwen": ("http://127.0.0.1:8001/v1/chat/completions", "Qwen/Qwen3-Coder-Next"),
 }
 SYSTEM = """You are an intent planner, never an application operator. Return exactly four lines:
 decision=watch|execute|clarify|deny
@@ -22,20 +22,18 @@ def main():
     parser.add_argument("--provider", choices=PROVIDERS, required=True)
     parser.add_argument("--goal", required=True)
     args = parser.parse_args()
-    key_name, default_url, default_model = PROVIDERS[args.provider]
-    api_key = os.environ.get(key_name)
-    if not api_key:
-        sys.exit(f"missing {key_name}")
-    prefix = "DRMD_GLM" if args.provider == "glm" else "DRMD_QWEN"
-    url = os.environ.get(prefix + "_BASE_URL", default_url)
-    model = os.environ.get(prefix + "_MODEL", default_model)
+    url, model = PROVIDERS[args.provider]
+    parsed = urlparse(url)
+    if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "::1", "localhost"}:
+        sys.exit("model endpoint must be loopback HTTP")
     body = json.dumps({
         "model": model,
         "temperature": 0,
         "max_tokens": 160,
+        "reasoning_effort": "low",
         "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": args.goal}],
     }).encode()
-    request = urllib.request.Request(url, data=body, headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"})
+    request = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(request, timeout=30) as response:
         payload = json.load(response)
     content = payload["choices"][0]["message"]["content"]
