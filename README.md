@@ -55,6 +55,8 @@ For web and application suites, `task.watch` learns from successful user/applica
 
 `drmd assist` adds a loopback-only GLM-5.3-Flash user-agent frontend for specific natural-language goals, with the 3B-active Qwen3-Coder-Next as the efficient local comparison. Models can only propose bounded task manifests; DRM retains state, certification, application allowlists, web policy, verification, and execution authority. See [`docs/MODEL_FRONTEND.md`](docs/MODEL_FRONTEND.md).
 
+The constrained local-model matrix supplies reproducible 8/12/16/24 GiB QEMU environments, model feasibility declarations, and a guest resource-measurement harness. DRM compares multiple quantizations, sizes, devices, adapters, and context budgets by verified completion efficiency rather than model size alone. See [`docs/LOCAL_MODEL_VM_MATRIX.md`](docs/LOCAL_MODEL_VM_MATRIX.md).
+
 `serve` uses the two-tier `HybridPlanner` (a fast-forming, capped
 *provisional* vocabulary alongside the conservative *permanent* one) with
 deferred background consolidation, so submitting an episode is never

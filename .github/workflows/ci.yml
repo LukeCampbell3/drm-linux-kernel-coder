@@ -38,6 +38,14 @@ jobs:
         if: matrix.profile == 'debug'
         run: cargo fmt --all -- --check
 
+      - name: Validate constrained VM launchers
+        if: matrix.profile == 'debug'
+        run: |
+          sh -n packaging/vm-image/run-profile.sh
+          sh -n packaging/vm-image/guest-model-bench.sh
+          packaging/vm-image/test-profile-launcher.sh
+          packaging/vm-image/test-model-matrix.sh
+
       - name: Clippy (deny warnings)
         if: matrix.profile == 'debug'
         run: cargo clippy --workspace --all-targets -- -D warnings
