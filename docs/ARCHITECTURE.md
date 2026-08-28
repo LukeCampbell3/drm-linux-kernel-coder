@@ -63,6 +63,10 @@ crates/
 - `web`: validates per-deployment host policy and invokes the one-shot
   Selenium bridge for the opt-in `web.selenium` capability. Fresh browser
   sessions prevent cookie/local-storage transfer between applications.
+- `code`: provides the opt-in `code.patch` mutation boundary. It confines
+  unified patches to an exact Git root and operator allowlist, refuses dirty
+  or symlinked targets, verifies before and after application, and rolls back
+  automatically when the operator-fixed test command fails.
 - `servers`: the in-process loopback fixture servers backing
   `http.request`/`ipc.request`, so those capabilities have a real socket
   round-trip to perform without requiring external network access.

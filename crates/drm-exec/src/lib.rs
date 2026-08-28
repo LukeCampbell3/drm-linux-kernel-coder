@@ -11,11 +11,13 @@
 //! memoized transform) instead of merely naming one. Unattached (the
 //! default), `LiveExecutor` behaves exactly as it always has.
 
+pub mod code;
 pub mod executor;
 pub mod servers;
 pub mod specialize;
 pub mod web;
 
+pub use code::CodeConfig;
 pub use executor::{make_fixtures, ExecError, LiveExecutor};
 pub use servers::{TcpFixtureServer, UnixFixtureServer};
 pub use specialize::SpecializationSet;

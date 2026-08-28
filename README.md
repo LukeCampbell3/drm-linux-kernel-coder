@@ -49,6 +49,8 @@ drmd submit --task web_research --ops web.selenium,transform.summarize,fs.write 
 
 See [`docs/SELENIUM_WEB.md`](docs/SELENIUM_WEB.md) for host allowlists, Selenium Grid support, limits, and isolation behavior.
 
+DRM instances can also be granted narrowly scoped, transactional source modification through `code.patch`. It is disabled by default and requires an exact Git root, path allowlist, patch-size ceiling, and fixed verification command. Failed verification automatically reverses the patch. See [`docs/GUARDED_CODE_CHANGES.md`](docs/GUARDED_CODE_CHANGES.md).
+
 `serve` uses the two-tier `HybridPlanner` (a fast-forming, capped
 *provisional* vocabulary alongside the conservative *permanent* one) with
 deferred background consolidation, so submitting an episode is never
