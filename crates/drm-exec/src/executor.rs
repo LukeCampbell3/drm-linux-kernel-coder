@@ -141,7 +141,6 @@ impl LiveExecutor {
         self
     }
 
-
     fn note_roots(&mut self, cap: &str) {
         for r in root_expansion(cap) {
             *self.root_counts.entry((*r).to_string()).or_default() += 1;

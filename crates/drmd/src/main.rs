@@ -20,8 +20,8 @@
 //! - `explain <optimization-id>`: detail on one specialization.
 //! - `reset <scope>`: `all` or `application:<id>`.
 
-mod bench;
 mod agent_bench;
+mod bench;
 mod cli;
 mod client;
 mod fmt;
@@ -131,7 +131,11 @@ fn cmd_agent_bench(args: &[String]) -> ExitCode {
                 report.committed
             );
             println!("report written to {}", out.display());
-            if report.final_passed == report.total_cases { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+            if report.final_passed == report.total_cases {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
         }
         Err(error) => {
             eprintln!("drmd: agent-bench failed: {error}");

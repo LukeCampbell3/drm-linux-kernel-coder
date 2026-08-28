@@ -23,7 +23,12 @@ const TASKS: &[TaskFixture] = &[
     TaskFixture {
         name: "weighted_scoring",
         source: "wins, draws = map(int, input().split())\nprint(wins * 1 + draws)\n",
-        cases: &[("none", "0 0\n", "0"), ("mixed", "2 1\n", "5"), ("wins", "3 0\n", "6"), ("draws", "0 4\n", "4")],
+        cases: &[
+            ("none", "0 0\n", "0"),
+            ("mixed", "2 1\n", "5"),
+            ("wins", "3 0\n", "6"),
+            ("draws", "0 4\n", "4"),
+        ],
     },
 ];
 
@@ -57,7 +62,10 @@ pub fn run(out: &Path) -> Result<AgentBenchReport, Box<dyn std::error::Error>> {
     };
     let mut csv = String::from("task,initial_passed,final_passed,total_cases,candidates_evaluated,mutations_committed,elapsed_ms\n");
     for (name, row) in &rows {
-        csv.push_str(&format!("{name},{},{},{},{},{},{}\n", row.initial_passed, row.final_passed, row.total_cases, row.candidates_evaluated, row.mutations_committed, row.elapsed_ms));
+        csv.push_str(&format!(
+            "{name},{},{},{},{},{},{}\n",
+            row.initial_passed, row.final_passed, row.total_cases, row.candidates_evaluated, row.mutations_committed, row.elapsed_ms
+        ));
     }
     fs::write(out.join("agentic_metrics.csv"), csv)?;
     fs::write(out.join("agentic_summary.md"), summary(&report, &rows))?;
@@ -67,7 +75,11 @@ pub fn run(out: &Path) -> Result<AgentBenchReport, Box<dyn std::error::Error>> {
 fn manifest(fixture: &TaskFixture) -> String {
     let mut value = format!("source={}/program.py\nmax_candidates=256\ntimeout_ms=1000\n", fixture.name);
     for (name, input, expected) in fixture.cases {
-        value.push_str(&format!("case={name}|{}|{}\n", input.replace('\n', "\\n"), expected.replace('\n', "\\n")));
+        value.push_str(&format!(
+            "case={name}|{}|{}\n",
+            input.replace('\n', "\\n"),
+            expected.replace('\n', "\\n")
+        ));
     }
     value
 }
@@ -80,9 +92,20 @@ fn summary(report: &AgentBenchReport, rows: &[(&str, MutationReport)]) -> String
         report.candidates, report.committed
     );
     for (name, row) in rows {
-        value.push_str(&format!("| {name} | {}/{} | {}/{} | {} | {} | {} |\n", row.initial_passed, row.total_cases, row.final_passed, row.total_cases, row.candidates_evaluated, row.mutations_committed, row.elapsed_ms));
+        value.push_str(&format!(
+            "| {name} | {}/{} | {}/{} | {} | {} | {} |\n",
+            row.initial_passed,
+            row.total_cases,
+            row.final_passed,
+            row.total_cases,
+            row.candidates_evaluated,
+            row.mutations_committed,
+            row.elapsed_ms
+        ));
     }
     value
 }
 
-fn percentage(value: usize, total: usize) -> f64 { 100.0 * value as f64 / total as f64 }
+fn percentage(value: usize, total: usize) -> f64 {
+    100.0 * value as f64 / total as f64
+}
