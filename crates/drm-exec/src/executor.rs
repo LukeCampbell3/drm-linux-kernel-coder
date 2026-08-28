@@ -228,9 +228,10 @@ impl LiveExecutor {
                     self.tcp_requests += 1;
                 }
                 "web.selenium" => {
-                    let web = self.web.as_ref().ok_or_else(|| ExecError::WebDenied(
-                        "set DRMD_WEB_ALLOWED_HOSTS to enable Selenium".into()
-                    ))?;
+                    let web = self
+                        .web
+                        .as_ref()
+                        .ok_or_else(|| ExecError::WebDenied("set DRMD_WEB_ALLOWED_HOSTS to enable Selenium".into()))?;
                     data = web.fetch(&ep.url_path, &ep.ctx.application_id)?;
                     self.web_requests += 1;
                 }

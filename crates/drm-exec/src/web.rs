@@ -43,18 +43,10 @@ impl WebConfig {
     pub fn fetch(&self, url: &str, application_id: &str) -> Result<String, ExecError> {
         let host = validated_host(url)?;
         if !self.allow_private && is_private_host(&host) {
-            return Err(ExecError::WebDenied(format!(
-                "private or local host `{host}` is blocked"
-            )));
+            return Err(ExecError::WebDenied(format!("private or local host `{host}` is blocked")));
         }
-        if !self
-            .allowed_hosts
-            .iter()
-            .any(|rule| host_matches(&host, rule))
-        {
-            return Err(ExecError::WebDenied(format!(
-                "host `{host}` is not in DRMD_WEB_ALLOWED_HOSTS"
-            )));
+        if !self.allowed_hosts.iter().any(|rule| host_matches(&host, rule)) {
+            return Err(ExecError::WebDenied(format!("host `{host}` is not in DRMD_WEB_ALLOWED_HOSTS")));
         }
 
         let mut command = Command::new(&self.python);
@@ -73,11 +65,7 @@ impl WebConfig {
         }
         let output = command.output()?;
         if !output.status.success() {
-            let detail = String::from_utf8_lossy(&output.stderr)
-                .trim()
-                .chars()
-                .take(500)
-                .collect::<String>();
+            let detail = String::from_utf8_lossy(&output.stderr).trim().chars().take(500).collect::<String>();
             return Err(ExecError::WebBridge(if detail.is_empty() {
                 "Selenium bridge failed".into()
             } else {
@@ -85,21 +73,14 @@ impl WebConfig {
             }));
         }
         if output.stdout.len() > self.max_output_bytes {
-            return Err(ExecError::WebBridge(
-                "Selenium bridge exceeded its output limit".into(),
-            ));
+            return Err(ExecError::WebBridge("Selenium bridge exceeded its output limit".into()));
         }
-        String::from_utf8(output.stdout).map_err(|_| {
-            ExecError::WebBridge("Selenium bridge returned non-UTF-8 output".into())
-        })
+        String::from_utf8(output.stdout).map_err(|_| ExecError::WebBridge("Selenium bridge returned non-UTF-8 output".into()))
     }
 }
 
 fn env_number<T: std::str::FromStr>(name: &str, default: T) -> T {
-    std::env::var(name)
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(default)
+    std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
 }
 
 fn validated_host(url: &str) -> Result<String, ExecError> {
@@ -109,15 +90,10 @@ fn validated_host(url: &str) -> Result<String, ExecError> {
         .ok_or_else(|| ExecError::WebDenied("only http:// and https:// URLs are allowed".into()))?;
     let authority = rest.split(['/', '?', '#']).next().unwrap_or_default();
     if authority.is_empty() || authority.contains('@') {
-        return Err(ExecError::WebDenied(
-            "URL must contain a host and no credentials".into(),
-        ));
+        return Err(ExecError::WebDenied("URL must contain a host and no credentials".into()));
     }
     let host = if authority.starts_with('[') {
-        authority
-            .strip_prefix('[')
-            .and_then(|v| v.split(']').next())
-            .unwrap_or_default()
+        authority.strip_prefix('[').and_then(|v| v.split(']').next()).unwrap_or_default()
     } else {
         authority.split(':').next().unwrap_or_default()
     }
@@ -132,11 +108,7 @@ fn validated_host(url: &str) -> Result<String, ExecError> {
 
 fn host_matches(host: &str, rule: &str) -> bool {
     let rule = rule.trim().trim_end_matches('.').to_ascii_lowercase();
-    rule == "*"
-        || host == rule
-        || rule
-            .strip_prefix("*.")
-            .is_some_and(|suffix| host.ends_with(&format!(".{suffix}")))
+    rule == "*" || host == rule || rule.strip_prefix("*.").is_some_and(|suffix| host.ends_with(&format!(".{suffix}")))
 }
 
 fn is_private_host(host: &str) -> bool {
@@ -146,17 +118,10 @@ fn is_private_host(host: &str) -> bool {
     if let Ok(ip) = host.parse::<std::net::IpAddr>() {
         return match ip {
             std::net::IpAddr::V4(v4) => {
-                v4.is_private()
-                    || v4.is_loopback()
-                    || v4.is_link_local()
-                    || v4.is_unspecified()
-                    || v4.is_broadcast()
+                v4.is_private() || v4.is_loopback() || v4.is_link_local() || v4.is_unspecified() || v4.is_broadcast()
             }
             std::net::IpAddr::V6(v6) => {
-                v6.is_loopback()
-                    || v6.is_unspecified()
-                    || (v6.segments()[0] & 0xfe00) == 0xfc00
-                    || (v6.segments()[0] & 0xffc0) == 0xfe80
+                v6.is_loopback() || v6.is_unspecified() || (v6.segments()[0] & 0xfe00) == 0xfc00 || (v6.segments()[0] & 0xffc0) == 0xfe80
             }
         };
     }

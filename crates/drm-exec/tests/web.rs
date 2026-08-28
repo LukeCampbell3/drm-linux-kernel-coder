@@ -10,11 +10,7 @@ fn tmp_dir(name: &str) -> PathBuf {
 fn fake_bridge(work: &std::path::Path) -> PathBuf {
     let bridge = work.join("bridge.sh");
     std::fs::create_dir_all(work).unwrap();
-    std::fs::write(
-        &bridge,
-        "#!/bin/sh\nprintf '%s' '{\"title\":\"fixture\",\"text\":\"hello web\"}'\n",
-    )
-    .unwrap();
+    std::fs::write(&bridge, "#!/bin/sh\nprintf '%s' '{\"title\":\"fixture\",\"text\":\"hello web\"}'\n").unwrap();
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -39,9 +35,7 @@ fn config(bridge: PathBuf) -> WebConfig {
 fn selenium_output_flows_into_the_normal_commit_pipeline() {
     let work = tmp_dir("success");
     let bridge = fake_bridge(&work);
-    let mut executor = LiveExecutor::start(work.clone())
-        .unwrap()
-        .with_web(config(bridge));
+    let mut executor = LiveExecutor::start(work.clone()).unwrap().with_web(config(bridge));
     let episode = Episode {
         idx: 1,
         ctx: ExecutionContext::simple("browser-app", "research"),
@@ -63,9 +57,7 @@ fn selenium_output_flows_into_the_normal_commit_pipeline() {
 fn disallowed_host_never_starts_the_bridge() {
     let work = tmp_dir("denied");
     let bridge = fake_bridge(&work);
-    let mut executor = LiveExecutor::start(work.clone())
-        .unwrap()
-        .with_web(config(bridge));
+    let mut executor = LiveExecutor::start(work.clone()).unwrap().with_web(config(bridge));
     let episode = Episode {
         ctx: ExecutionContext::simple("browser-app", "research"),
         ops: vec!["web.selenium".into()],
