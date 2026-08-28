@@ -49,8 +49,7 @@ impl CodeConfig {
                 self.max_patch_bytes
             )));
         }
-        let patch_text = std::str::from_utf8(patch)
-            .map_err(|_| ExecError::CodeDenied("patch must be UTF-8 text".into()))?;
+        let patch_text = std::str::from_utf8(patch).map_err(|_| ExecError::CodeDenied("patch must be UTF-8 text".into()))?;
         if patch_text.contains("GIT binary patch") || patch_text.contains("Binary files ") {
             return Err(ExecError::CodeDenied("binary patches are not permitted".into()));
         }
@@ -83,7 +82,10 @@ fn env_number<T: std::str::FromStr>(name: &str, default: T) -> T {
 }
 
 fn ensure_git_root(root: &Path) -> Result<(), ExecError> {
-    let output = Command::new("git").args(["rev-parse", "--show-toplevel"]).current_dir(root).output()?;
+    let output = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .current_dir(root)
+        .output()?;
     if !output.status.success() {
         return Err(ExecError::CodeDenied("DRMD_CODE_ROOT is not a Git worktree".into()));
     }
@@ -122,28 +124,43 @@ fn patch_targets(patch: &str, allow_delete: bool) -> Result<Vec<PathBuf>, ExecEr
 
 fn validate_target(root: &Path, target: &Path, allowed: &[PathBuf]) -> Result<(), ExecError> {
     if target.is_absolute()
-        || target.components().any(|part| matches!(part, Component::ParentDir | Component::RootDir | Component::Prefix(_)))
+        || target
+            .components()
+            .any(|part| matches!(part, Component::ParentDir | Component::RootDir | Component::Prefix(_)))
         || target.starts_with(".git")
     {
         return Err(ExecError::CodeDenied(format!("unsafe target `{}`", target.display())));
     }
     if !allowed.iter().any(|prefix| target.starts_with(prefix)) {
-        return Err(ExecError::CodeDenied(format!("target `{}` is outside DRMD_CODE_ALLOWED_PATHS", target.display())));
+        return Err(ExecError::CodeDenied(format!(
+            "target `{}` is outside DRMD_CODE_ALLOWED_PATHS",
+            target.display()
+        )));
     }
     let mut cursor = root.to_path_buf();
     for component in target.components() {
         cursor.push(component);
         if cursor.symlink_metadata().is_ok_and(|metadata| metadata.file_type().is_symlink()) {
-            return Err(ExecError::CodeDenied(format!("symlink target component `{}` is blocked", cursor.display())));
+            return Err(ExecError::CodeDenied(format!(
+                "symlink target component `{}` is blocked",
+                cursor.display()
+            )));
         }
     }
     Ok(())
 }
 
 fn ensure_target_clean(root: &Path, target: &Path) -> Result<(), ExecError> {
-    let output = Command::new("git").args(["status", "--porcelain", "--"]).arg(target).current_dir(root).output()?;
+    let output = Command::new("git")
+        .args(["status", "--porcelain", "--"])
+        .arg(target)
+        .current_dir(root)
+        .output()?;
     if !output.status.success() || !output.stdout.is_empty() {
-        return Err(ExecError::CodeDenied(format!("target `{}` has pre-existing changes", target.display())));
+        return Err(ExecError::CodeDenied(format!(
+            "target `{}` has pre-existing changes",
+            target.display()
+        )));
     }
     Ok(())
 }
@@ -151,15 +168,21 @@ fn ensure_target_clean(root: &Path, target: &Path) -> Result<(), ExecError> {
 fn run_git_apply(root: &Path, patch: &[u8], check: bool, reverse: bool) -> Result<(), ExecError> {
     let mut command = Command::new("git");
     command.args(["apply", "--whitespace=error-all"]);
-    if check { command.arg("--check"); }
-    if reverse { command.arg("--reverse"); }
+    if check {
+        command.arg("--check");
+    }
+    if reverse {
+        command.arg("--reverse");
+    }
     let mut child = command.current_dir(root).stdin(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
     child.stdin.as_mut().expect("piped stdin").write_all(patch)?;
     let output = child.wait_with_output()?;
     if output.status.success() {
         Ok(())
     } else {
-        Err(ExecError::CodePatch(String::from_utf8_lossy(&output.stderr).trim().chars().take(1000).collect()))
+        Err(ExecError::CodePatch(
+            String::from_utf8_lossy(&output.stderr).trim().chars().take(1000).collect(),
+        ))
     }
 }
 

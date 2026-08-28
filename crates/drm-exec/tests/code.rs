@@ -8,10 +8,28 @@ fn repo(name: &str) -> PathBuf {
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(root.join("src")).unwrap();
     std::fs::write(root.join("src/lib.rs"), "pub fn value() -> u8 { 1 }\n").unwrap();
-    assert!(Command::new("git").args(["init", "-q"]).current_dir(&root).status().unwrap().success());
-    assert!(Command::new("git").args(["add", "."]).current_dir(&root).status().unwrap().success());
     assert!(Command::new("git")
-        .args(["-c", "user.name=DRM Test", "-c", "user.email=drm@example.invalid", "commit", "-qm", "fixture"])
+        .args(["init", "-q"])
+        .current_dir(&root)
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args(["add", "."])
+        .current_dir(&root)
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args([
+            "-c",
+            "user.name=DRM Test",
+            "-c",
+            "user.email=drm@example.invalid",
+            "commit",
+            "-qm",
+            "fixture"
+        ])
         .current_dir(&root)
         .status()
         .unwrap()
@@ -53,6 +71,10 @@ fn failed_verification_rolls_the_patch_back() {
 fn paths_outside_the_allowlist_are_rejected() {
     let root = repo("deny");
     let patch = b"diff --git a/README.md b/README.md\n--- /dev/null\n+++ b/README.md\n@@ -0,0 +1 @@\n+unsafe\n";
-    assert!(config(root.clone(), "/bin/true").apply(patch).unwrap_err().to_string().contains("outside"));
+    assert!(config(root.clone(), "/bin/true")
+        .apply(patch)
+        .unwrap_err()
+        .to_string()
+        .contains("outside"));
     let _ = std::fs::remove_dir_all(root);
 }
