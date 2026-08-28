@@ -18,6 +18,7 @@ use drm_core::{root_expansion, Episode};
 
 use crate::servers::{TcpFixtureServer, UnixFixtureServer};
 use crate::specialize::SpecializationSet;
+use crate::web::WebConfig;
 
 #[derive(Debug)]
 pub enum ExecError {
@@ -25,6 +26,8 @@ pub enum ExecError {
     UnknownCapability(String),
     ChildFailed(String),
     VerificationFailed(String),
+    WebDenied(String),
+    WebBridge(String),
 }
 
 impl std::fmt::Display for ExecError {
@@ -34,6 +37,8 @@ impl std::fmt::Display for ExecError {
             ExecError::UnknownCapability(c) => write!(f, "unknown capability: {c}"),
             ExecError::ChildFailed(c) => write!(f, "child process failed: {c}"),
             ExecError::VerificationFailed(p) => write!(f, "output verification failed for {p}"),
+            ExecError::WebDenied(reason) => write!(f, "web access denied: {reason}"),
+            ExecError::WebBridge(reason) => write!(f, "Selenium bridge error: {reason}"),
         }
     }
 }
@@ -56,6 +61,7 @@ pub struct LiveExecutor {
     pub tcp_requests: usize,
     pub ipc_requests: usize,
     pub timer_events: usize,
+    pub web_requests: usize,
     pub root_counts: HashMap<String, usize>,
     /// Opt-in bridge to `drm-opt`'s specialization lifecycle (see
     /// `crate::specialize` module docs). `None` (the default from
@@ -74,6 +80,8 @@ pub struct LiveExecutor {
     /// most recent [`LiveExecutor::execute`] call, in the order they were
     /// used. Cleared at the start of every call.
     pub optimizations_used: Vec<String>,
+    /// Selenium access is disabled unless configured explicitly.
+    pub web: Option<WebConfig>,
 }
 
 impl LiveExecutor {
@@ -102,11 +110,13 @@ impl LiveExecutor {
             tcp_requests: 0,
             ipc_requests: 0,
             timer_events: 0,
+            web_requests: 0,
             root_counts: HashMap::new(),
             specializations: None,
             reads_avoided: 0,
             transforms_memoized: 0,
             optimizations_used: Vec::new(),
+            web: WebConfig::from_env(),
         })
     }
 
@@ -116,6 +126,11 @@ impl LiveExecutor {
     /// exactly as it always has.
     pub fn with_specialization(mut self, specializations: SpecializationSet) -> Self {
         self.specializations = Some(specializations);
+        self
+    }
+
+    pub fn with_web(mut self, config: WebConfig) -> Self {
+        self.web = Some(config);
         self
     }
 
@@ -211,6 +226,13 @@ impl LiveExecutor {
                 "http.request" => {
                     data = self.tcp.get(&ep.url_path)?;
                     self.tcp_requests += 1;
+                }
+                "web.selenium" => {
+                    let web = self.web.as_ref().ok_or_else(|| ExecError::WebDenied(
+                        "set DRMD_WEB_ALLOWED_HOSTS to enable Selenium".into()
+                    ))?;
+                    data = web.fetch(&ep.url_path, &ep.ctx.application_id)?;
+                    self.web_requests += 1;
                 }
                 "ipc.request" => {
                     let payload = if data.is_empty() {

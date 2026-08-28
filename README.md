@@ -40,6 +40,15 @@ root_counts: OBSERVE=141 DERIVE=390 COMMIT=230
     --source inputs/report.csv
 ```
 
+On the desktop image, DRM instances can also browse JavaScript-rendered public pages through Selenium:
+
+```bash
+drmd submit --task web_research --ops web.selenium,transform.summarize,fs.write \
+  --url https://www.rust-lang.org/learn --output outputs/research.txt
+```
+
+See [`docs/SELENIUM_WEB.md`](docs/SELENIUM_WEB.md) for host allowlists, Selenium Grid support, limits, and isolation behavior.
+
 `serve` uses the two-tier `HybridPlanner` (a fast-forming, capped
 *provisional* vocabulary alongside the conservative *permanent* one) with
 deferred background consolidation, so submitting an episode is never

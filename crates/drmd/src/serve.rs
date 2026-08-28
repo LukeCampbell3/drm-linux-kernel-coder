@@ -193,7 +193,7 @@ fn submit_response(ctx: &ExecutionContext, idx: usize, pm: &drm_core::PlanMetric
 
 fn status_response(s: &ServerState) -> String {
     format!(
-        "{{\"ok\":true,\"uptime_secs\":{:.3},\"episodes_planned\":{},\"applications\":{},\"global_words\":{},\"commits\":{},\"process_spawns\":{},\"tcp_requests\":{},\"ipc_requests\":{},\"timer_events\":{}}}",
+        "{{\"ok\":true,\"uptime_secs\":{:.3},\"episodes_planned\":{},\"applications\":{},\"global_words\":{},\"commits\":{},\"process_spawns\":{},\"tcp_requests\":{},\"ipc_requests\":{},\"timer_events\":{},\"web_requests\":{}}}",
         s.started_at.elapsed().as_secs_f64(),
         s.episodes_planned,
         s.registry.application_ids().len(),
@@ -203,6 +203,7 @@ fn status_response(s: &ServerState) -> String {
         s.executor.tcp_requests,
         s.executor.ipc_requests,
         s.executor.timer_events,
+        s.executor.web_requests,
     )
 }
 
@@ -291,7 +292,7 @@ fn learned_response(s: &ServerState, app_filter: Option<&str>) -> String {
 
 fn metrics_response(s: &ServerState) -> String {
     format!(
-        "{{\"ok\":true,\"episodes_planned\":{},\"applications\":{},\"global_words\":{},\"commits\":{},\"process_spawns\":{},\"tcp_requests\":{},\"ipc_requests\":{}}}",
+        "{{\"ok\":true,\"episodes_planned\":{},\"applications\":{},\"global_words\":{},\"commits\":{},\"process_spawns\":{},\"tcp_requests\":{},\"ipc_requests\":{},\"web_requests\":{}}}",
         s.episodes_planned,
         s.registry.application_ids().len(),
         s.registry.global.vocab.derived.len(),
@@ -299,6 +300,7 @@ fn metrics_response(s: &ServerState) -> String {
         s.executor.process_spawns,
         s.executor.tcp_requests,
         s.executor.ipc_requests,
+        s.executor.web_requests,
     )
 }
 

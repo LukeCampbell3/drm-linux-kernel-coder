@@ -14,7 +14,9 @@
 pub mod executor;
 pub mod servers;
 pub mod specialize;
+pub mod web;
 
 pub use executor::{make_fixtures, ExecError, LiveExecutor};
 pub use servers::{TcpFixtureServer, UnixFixtureServer};
 pub use specialize::SpecializationSet;
+pub use web::WebConfig;

@@ -125,7 +125,7 @@ mkfs.ext4 -q -F -L drmdesktop "$PART"
 mount "$PART" "$MNT"
 
 log "debootstrap (stage 1/unpack): $SUITE from $MIRROR, full XFCE desktop (this fetches several hundred MB, may take 10+ minutes)"
-PACKAGES="systemd-sysv,linux-image-amd64,grub-pc,ca-certificates,coreutils,iproute2,openssh-server,sudo,less,procps,xserver-xorg,xinit,xfce4,xfce4-terminal,lightdm,lightdm-gtk-greeter,dbus-x11,fonts-dejavu-core"
+PACKAGES="systemd-sysv,linux-image-amd64,grub-pc,ca-certificates,coreutils,iproute2,openssh-server,sudo,less,procps,xserver-xorg,xinit,xfce4,xfce4-terminal,lightdm,lightdm-gtk-greeter,dbus-x11,fonts-dejavu-core,chromium,chromium-driver,python3,python3-selenium"
 debootstrap --foreign --arch=amd64 --include="$PACKAGES" "$SUITE" "$MNT" "$MIRROR"
 
 log "binding /dev, /proc, /sys into chroot"
@@ -141,6 +141,7 @@ ROOT_UUID="$(blkid -s UUID -o value "$PART")"
 
 log "installing drmd binary (no system-level unit -- this image runs drmd as a per-user systemd --user service)"
 install -D -m 755 "$BINARY" "$MNT/usr/local/bin/drmd"
+install -D -m 755 "$REPO_ROOT/packaging/selenium/selenium_bridge.py" "$MNT/usr/local/lib/drmd/selenium_bridge.py"
 
 log "writing base system configuration"
 echo "$HOSTNAME_VALUE" > "$MNT/etc/hostname"
@@ -255,6 +256,7 @@ EOF
 mkdir -p "$MNT/usr/local/share/doc/drmd"
 cp "$REPO_ROOT/README.md" "$MNT/usr/local/share/doc/drmd/README.md" 2>/dev/null || true
 cp "$REPO_ROOT/docs/ARCHITECTURE.md" "$MNT/usr/local/share/doc/drmd/ARCHITECTURE.md" 2>/dev/null || true
+cp "$REPO_ROOT/docs/SELENIUM_WEB.md" "$MNT/usr/local/share/doc/drmd/SELENIUM_WEB.md" 2>/dev/null || true
 cp "$REPO_ROOT/docs/reports/desktop-experiment.md" "$MNT/usr/local/share/doc/drmd/desktop-experiment.md" 2>/dev/null || true
 
 log "installing the BIOS boot sector (grub-install, run from the host -- see build-image.sh's comment on why)"
