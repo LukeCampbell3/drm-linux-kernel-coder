@@ -51,6 +51,8 @@ See [`docs/SELENIUM_WEB.md`](docs/SELENIUM_WEB.md) for host allowlists, Selenium
 
 DRM instances can adapt task programs during execution through `code.evolve`: run executable goals, derive bounded mutations, retain only strict improvements, and continue from the improved live program without Git. `drmd agent-bench` measures the loop against static programs on three code-repair tasks. See [`docs/RUNTIME_MUTATION.md`](docs/RUNTIME_MUTATION.md).
 
+For web and application suites, `task.watch` learns from successful user/application traces in shadow mode, while `app.execute` runs only independently supported, certified workflows through operator-allowlisted adapters. `drmd suite-bench` measures action and duration efficiency over successive observations without exposing live applications to exploratory mutations. See [`docs/OBSERVE_FIRST_APPS.md`](docs/OBSERVE_FIRST_APPS.md).
+
 `serve` uses the two-tier `HybridPlanner` (a fast-forming, capped
 *provisional* vocabulary alongside the conservative *permanent* one) with
 deferred background consolidation, so submitting an episode is never

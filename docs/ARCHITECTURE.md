@@ -67,6 +67,10 @@ crates/
   the live task program against executable goals, derives bounded mutations,
   atomically retains strict improvements, restores rejected candidates, and
   reports the complete mutation/search trajectory without using Git.
+- `interaction`: separates observation, shadow selection, certification, and
+  live application execution. Successful traces teach shorter/faster workflows;
+  only independently supported policies can reach allowlisted application
+  adapters, so exploratory mutations never run against the user's live suite.
 - `servers`: the in-process loopback fixture servers backing
   `http.request`/`ipc.request`, so those capabilities have a real socket
   round-trip to perform without requiring external network access.

@@ -4,6 +4,7 @@
 //! - `selftest`: fast in-memory invariant check (no I/O).
 //! - `bench [--out DIR]`: run the frozen 99-episode regression workload.
 //! - `agent-bench [--out DIR]`: run executable goal-driven program-repair tasks.
+//! - `suite-bench [--out DIR]`: measure observe-first application workflow learning.
 //! - `simulate <server|desktop> [--out DIR]`: run the comparative
 //!   benchmark suite (five baselines + three DRM configurations) against
 //!   a deterministic synthetic workload and write CSVs + a summary.
@@ -30,6 +31,7 @@ mod registry_state;
 mod selftest;
 mod serve;
 mod simulate;
+mod suite_bench;
 mod workload;
 
 use std::path::PathBuf;
@@ -47,6 +49,7 @@ Usage:\n  \
   drmd selftest\n  \
   drmd bench [--out DIR]\n  \
   drmd agent-bench [--out DIR]\n  \
+  drmd suite-bench [--out DIR]\n  \
   drmd simulate <server|desktop> [--out DIR]\n  \
   drmd serve [--socket PATH] [--work DIR] [--state DIR] [--consolidate-ms N]\n  \
   drmd submit --task NAME --ops cap1,cap2,... [--app ID] [--workload ID] [--host ID] [--user ID] [--socket PATH] [--source PATH] [--output PATH] [--url PATH] [--ancestral]\n  \
@@ -95,6 +98,7 @@ fn main() -> ExitCode {
         }
         "bench" => cmd_bench(rest),
         "agent-bench" => cmd_agent_bench(rest),
+        "suite-bench" => cmd_suite_bench(rest),
         "simulate" => cmd_simulate(rest),
         "serve" => cmd_serve(rest),
         "submit" => cmd_submit(rest),
@@ -110,6 +114,22 @@ fn main() -> ExitCode {
         other => {
             eprintln!("drmd: unknown command `{other}`\n");
             print_help();
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn cmd_suite_bench(args: &[String]) -> ExitCode {
+    let parsed = ParsedArgs::parse(args);
+    let out = parsed.path_or("out", "results/suite-bench");
+    match suite_bench::run(&out) {
+        Ok(report) => {
+            println!("families={} observations={} certified={} actions={}->{} duration_ms={}->{} interventions={} shadow_evaluations={}", report.families, report.observations, report.certified, report.initial_actions, report.certified_actions, report.initial_ms, report.certified_ms, report.interventions_observed, report.shadow_evaluations);
+            println!("report written to {}", out.display());
+            if report.certified == report.families { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+        }
+        Err(error) => {
+            eprintln!("drmd: suite-bench failed: {error}");
             ExitCode::FAILURE
         }
     }
